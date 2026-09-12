@@ -1,0 +1,193 @@
+<?php
+
+namespace App\Tests;
+
+class AccountApiTest extends ApiTestCase
+{
+    public function testLoginIsRateLimitedAgainstBruteForcing(): void
+    {
+        $this->request('POST', '/api/register', $this->registration());
+
+        for ($i = 0; $i < 10; ++$i) {
+            $this->request('POST', '/api/login', ['email' => 'axel@exemple.test', 'password' => 'mauvais-mot']);
+            $this->assertResponseStatusCodeSame(401);
+        }
+
+        // Même avec le bon mot de passe : la limite se déclenche avant que la requête soit traitée.
+        $this->request('POST', '/api/login', ['email' => 'axel@exemple.test', 'password' => self::PASSWORD]);
+
+        $this->assertResponseStatusCodeSame(429);
+        $this->assertNotEmpty($this->client->getResponse()->headers->get('Retry-After'));
+    }
+
+    public function testRegistrationIsRateLimitedAgainstMassAccountCreation(): void
+    {
+        for ($i = 0; $i < 5; ++$i) {
+            $this->request('POST', '/api/register', $this->registration(['email' => "compte$i@exemple.test", 'name' => "compte$i"]));
+            $this->assertResponseStatusCodeSame(201);
+        }
+
+        $this->request('POST', '/api/register', $this->registration(['email' => 'compte-en-trop@exemple.test', 'name' => 'compte-en-trop']));
+
+        $this->assertResponseStatusCodeSame(429);
+    }
+
+    public function testRegistrationReturnsATokenAndThePlayerRole(): void
+    {
+        $payload = $this->request('POST', '/api/register', $this->registration());
+
+        $this->assertResponseStatusCodeSame(201);
+        $this->assertNotEmpty($payload['token']);
+        $this->assertSame('axel', $payload['user']['name']);
+        $this->assertSame('user', $payload['user']['role']);
+        $this->assertNotNull($payload['user']['consentedAt']);
+    }
+
+    public function testRegistrationRequiresConsent(): void
+    {
+        $this->request('POST', '/api/register', $this->registration(['consent' => false]));
+
+        $this->assertResponseStatusCodeSame(422);
+    }
+
+    public function testRegistrationRejectsShortPasswordAndInvalidEmail(): void
+    {
+        $payload = $this->request('POST', '/api/register', $this->registration(['email' => 'pas-un-email', 'password' => 'court']));
+
+        $this->assertResponseStatusCodeSame(422);
+        $this->assertCount(2, $payload['errors']);
+    }
+
+    public function testEmailAndNameAreUniqueRegardlessOfCase(): void
+    {
+        $this->request('POST', '/api/register', $this->registration());
+
+        $payload = $this->request('POST', '/api/register', $this->registration(['email' => 'AXEL@exemple.test', 'name' => 'Axel']));
+
+        $this->assertResponseStatusCodeSame(422);
+        $this->assertCount(2, $payload['errors']);
+    }
+
+    public function testLoginChecksThePassword(): void
+    {
+        $this->request('POST', '/api/register', $this->registration());
+
+        $this->request('POST', '/api/login', ['email' => 'axel@exemple.test', 'password' => 'mauvais-mot']);
+        $this->assertResponseStatusCodeSame(401);
+
+        $payload = $this->request('POST', '/api/login', ['email' => 'Axel@Exemple.test', 'password' => self::PASSWORD]);
+        $this->assertResponseIsSuccessful();
+        $this->assertSame('axel', $payload['user']['name']);
+    }
+
+    public function testTheApiRequiresAValidToken(): void
+    {
+        $this->request('GET', '/api/quizzes');
+        $this->assertResponseStatusCodeSame(401);
+
+        $this->client->request('GET', '/api/quizzes', server: ['HTTP_AUTHORIZATION' => 'Bearer jeton-invente']);
+        $this->assertResponseStatusCodeSame(401);
+    }
+
+    public function testRolesCannotBeForgedFromTheRequest(): void
+    {
+        $token = $this->account('bob');
+
+        // L'ancien en-tête X-Role n'a plus aucun effet.
+        $this->client->request('GET', '/api/access-keys', server: ['HTTP_AUTHORIZATION' => 'Bearer '.$token, 'HTTP_X_ROLE' => 'admin']);
+
+        $this->assertResponseStatusCodeSame(403);
+    }
+
+    public function testLogoutRevokesTheToken(): void
+    {
+        $token = $this->account('bob');
+
+        $this->client->request('POST', '/api/logout', server: ['HTTP_AUTHORIZATION' => 'Bearer '.$token]);
+        $this->assertResponseStatusCodeSame(204);
+
+        $this->client->request('GET', '/api/me', server: ['HTTP_AUTHORIZATION' => 'Bearer '.$token]);
+        $this->assertResponseStatusCodeSame(401);
+    }
+
+    public function testAGeneratedKeyGrantsItsRoleThenStopsOnceRevoked(): void
+    {
+        $key = $this->request('POST', '/api/access-keys', ['role' => 'prof'], as: $this->admin());
+
+        $payload = $this->request('POST', '/api/register', $this->registration(['name' => 'martin', 'email' => 'martin@exemple.test', 'accessKey' => $key['value']]));
+        $this->assertResponseStatusCodeSame(201);
+        $this->assertSame('prof', $payload['user']['role']);
+
+        $this->request('DELETE', '/api/access-keys/'.$key['id'], as: $this->admin());
+        $this->assertResponseIsSuccessful();
+
+        $this->request('POST', '/api/register', $this->registration(['accessKey' => $key['value']]));
+        $this->assertResponseStatusCodeSame(422);
+
+        $this->request('POST', '/api/me/access-key', ['key' => $key['value']], as: 'bob');
+        $this->assertResponseStatusCodeSame(403);
+    }
+
+    public function testAnAccessKeyPromotesButNeverDemotes(): void
+    {
+        $this->request('POST', '/api/me/access-key', ['key' => 'admin'], as: 'bob');
+        $this->assertResponseIsSuccessful();
+        $this->assertSame('admin', $this->request('GET', '/api/me', as: 'bob')['role']);
+
+        $key = $this->request('POST', '/api/access-keys', ['role' => 'prof'], as: 'bob');
+        $me = $this->request('POST', '/api/me/access-key', ['key' => $key['value']], as: 'bob');
+
+        $this->assertSame('admin', $me['role']);
+    }
+
+    public function testExportContainsEverythingKnownAboutTheAccount(): void
+    {
+        $quizId = $this->createQuiz();
+        $this->request('POST', '/api/quizzes/'.$quizId.'/sessions', ['answers' => []], as: 'bob');
+
+        $this->request('GET', '/api/me/export', as: 'bob');
+        $this->assertResponseIsSuccessful();
+        $this->assertStringContainsString('attachment', (string) $this->client->getResponse()->headers->get('Content-Disposition'));
+
+        $export = $this->json();
+        $this->assertSame('bob@exemple.test', $export['account']['email']);
+        $this->assertCount(1, $export['sessions']);
+        $this->assertSame([], $export['quizzes']);
+        $this->assertCount(1, $this->request('GET', '/api/me/export', as: 'prof.martin')['quizzes']);
+    }
+
+    public function testDeletingTheAccountErasesPersonalDataAndAnonymizesQuizzes(): void
+    {
+        $quizId = $this->createQuiz('prof.martin');
+        $this->request('POST', '/api/quizzes/'.$quizId.'/sessions', ['answers' => []], as: 'prof.martin');
+        $token = $this->account('prof.martin');
+
+        $this->request('DELETE', '/api/me', ['password' => 'pas-le-bon'], as: 'prof.martin');
+        $this->assertResponseStatusCodeSame(403);
+
+        $this->request('DELETE', '/api/me', ['password' => self::PASSWORD], as: 'prof.martin');
+        $this->assertResponseStatusCodeSame(204);
+
+        $this->client->request('GET', '/api/me', server: ['HTTP_AUTHORIZATION' => 'Bearer '.$token]);
+        $this->assertResponseStatusCodeSame(401);
+
+        $quiz = $this->request('GET', '/api/quizzes/'.$quizId, as: 'bob');
+        $this->assertSame('compte supprimé', $quiz['author'], 'Le quiz reste jouable, sans le pseudo de son auteur.');
+        $this->assertSame([], $this->request('GET', '/api/sessions?all=1', as: $this->admin()));
+        $this->assertNotContains('prof.martin', array_column($this->request('GET', '/api/users', as: $this->admin()), 'name'));
+
+        // L'adresse est libérée : la personne peut revenir plus tard.
+        $this->request('POST', '/api/register', $this->registration(['email' => 'prof.martin@exemple.test', 'name' => 'prof.martin']));
+        $this->assertResponseStatusCodeSame(201);
+    }
+
+    private function registration(array $overrides = []): array
+    {
+        return $overrides + [
+            'email' => 'axel@exemple.test',
+            'name' => 'axel',
+            'password' => self::PASSWORD,
+            'consent' => true,
+        ];
+    }
+}
