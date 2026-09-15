@@ -20,6 +20,38 @@ class AccountApiTest extends ApiTestCase
         $this->assertNotEmpty($this->client->getResponse()->headers->get('Retry-After'));
     }
 
+    /** Un attaquant qui change d'adresse IP à chaque essai reste limité sur le compte visé. */
+    public function testLoginFailuresAreAlsoLimitedPerAccountWhateverTheIp(): void
+    {
+        $this->request('POST', '/api/register', $this->registration());
+
+        for ($i = 0; $i < 10; ++$i) {
+            $this->request('POST', '/api/login', ['email' => 'axel@exemple.test', 'password' => 'mauvais-mot'], server: ['REMOTE_ADDR' => "203.0.113.$i"]);
+            $this->assertResponseStatusCodeSame(401);
+        }
+
+        $this->request('POST', '/api/login', ['email' => 'axel@exemple.test', 'password' => self::PASSWORD], server: ['REMOTE_ADDR' => '203.0.113.99']);
+
+        $this->assertResponseStatusCodeSame(429);
+        $this->assertNotEmpty($this->client->getResponse()->headers->get('Retry-After'));
+    }
+
+    /** Les échecs anciens ne pénalisent pas le vrai propriétaire une fois qu'il s'est connecté. */
+    public function testASuccessfulLoginClearsTheAccountFailures(): void
+    {
+        $this->request('POST', '/api/register', $this->registration());
+
+        foreach ([9, 9] as $round => $failures) {
+            for ($i = 0; $i < $failures; ++$i) {
+                $this->request('POST', '/api/login', ['email' => 'axel@exemple.test', 'password' => 'mauvais-mot'], server: ['REMOTE_ADDR' => "198.51.$round.$i"]);
+                $this->assertResponseStatusCodeSame(401);
+            }
+
+            $this->request('POST', '/api/login', ['email' => 'axel@exemple.test', 'password' => self::PASSWORD], server: ['REMOTE_ADDR' => "198.51.$round.200"]);
+            $this->assertResponseIsSuccessful();
+        }
+    }
+
     public function testRegistrationIsRateLimitedAgainstMassAccountCreation(): void
     {
         for ($i = 0; $i < 5; ++$i) {
@@ -138,6 +170,45 @@ class AccountApiTest extends ApiTestCase
         $me = $this->request('POST', '/api/me/access-key', ['key' => $key['value']], as: 'bob');
 
         $this->assertSame('admin', $me['role']);
+    }
+
+    /** Un code admin qui circule ne doit faire administrateur que la première personne qui le saisit. */
+    public function testAnAdminKeyWorksOnlyOnce(): void
+    {
+        $key = $this->request('POST', '/api/access-keys', ['role' => 'admin', 'label' => 'Nouvelle direction'], as: $this->admin());
+
+        $payload = $this->request('POST', '/api/register', $this->registration(['accessKey' => $key['value']]));
+        $this->assertResponseStatusCodeSame(201);
+        $this->assertSame('admin', $payload['user']['role']);
+
+        $this->request('POST', '/api/me/access-key', ['key' => $key['value']], as: 'bob');
+        $this->assertResponseStatusCodeSame(403);
+        $this->assertSame('user', $this->request('GET', '/api/me', as: 'bob')['role']);
+
+        $listed = current(array_filter($this->request('GET', '/api/access-keys', as: $this->admin()), static fn ($k) => $k['id'] === $key['id']));
+        $this->assertSame('assigned', $listed['status']);
+        $this->assertSame('axel', $listed['assignedTo']);
+    }
+
+    /** Une clé prof, elle, se partage : toute l'équipe pédagogique peut saisir la même. */
+    public function testATeacherKeyCanBeSharedByATeam(): void
+    {
+        $key = $this->request('POST', '/api/access-keys', ['role' => 'prof', 'label' => 'Équipe'], as: $this->admin());
+
+        foreach (['bob', 'chloe'] as $name) {
+            $this->request('POST', '/api/me/access-key', ['key' => $key['value']], as: $name);
+            $this->assertResponseIsSuccessful();
+            $this->assertSame('prof', $this->request('GET', '/api/me', as: $name)['role']);
+        }
+    }
+
+    public function testTheBootstrapKeyStopsWorkingOnceAnAdminExists(): void
+    {
+        $this->admin();
+
+        $this->request('POST', '/api/me/access-key', ['key' => 'admin'], as: 'bob');
+
+        $this->assertResponseStatusCodeSame(403);
     }
 
     public function testExportContainsEverythingKnownAboutTheAccount(): void

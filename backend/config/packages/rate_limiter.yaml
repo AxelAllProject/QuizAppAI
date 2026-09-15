@@ -13,6 +13,19 @@ framework:
             limit: 10
             interval: '15 minutes'
 
+        # Complète la limite par IP : un attaquant qui change d'adresse à chaque essai reste
+        # limité sur le compte visé. Seuls les échecs comptent, et une connexion réussie remet à zéro.
+        login_failures_per_account:
+            policy: sliding_window
+            limit: 10
+            interval: '15 minutes'
+
+        # Enregistrement des parties solo (par compte) : empêche de noyer les classements.
+        quiz_sessions:
+            policy: sliding_window
+            limit: 30
+            interval: '10 minutes'
+
         # Protège /api/register contre la création massive de comptes (par adresse IP).
         registration_attempts:
             policy: sliding_window

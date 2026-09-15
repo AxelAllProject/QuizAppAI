@@ -11,6 +11,7 @@ use App\Entity\Quiz;
 use App\Entity\User;
 use App\Exception\LiveGameException;
 use App\Repository\LiveGameRepository;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Clock\ClockInterface;
 
@@ -146,7 +147,12 @@ class LiveGameEngine
             $game->reveal();
         }
 
-        $this->em->flush();
+        try {
+            $this->em->flush();
+        } catch (UniqueConstraintViolationException) {
+            // Deux réponses parties au même instant (double clic) : la base n'en garde qu'une.
+            throw new LiveGameException('Tu as déjà répondu à cette question.');
+        }
 
         return $answer;
     }

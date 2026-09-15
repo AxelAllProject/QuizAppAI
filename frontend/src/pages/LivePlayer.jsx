@@ -3,9 +3,9 @@ import { Link, Navigate, useParams } from 'react-router-dom'
 import { assetUrl } from '../api'
 import Confetti from '../components/Confetti'
 import { Podium, Tile, Timer, formatPin, ordinal, useLiveGame, useRemainingMs } from '../components/live'
+import MusicToggle from '../components/MusicToggle'
 import { ErrorBox, Loader } from '../components/ui'
-
-const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' }
+import { Icon, Medal } from '../components/Icon'
 
 /** Écran d'un joueur : sur téléphone, les réponses sont de grosses tuiles colorées. */
 export default function LivePlayer() {
@@ -66,12 +66,15 @@ export default function LivePlayer() {
           <span className="badge accent">PIN {formatPin(game.pin)}</span>
           <h1 style={{ marginTop: '0.4rem', fontSize: '1.4rem' }}>{game.quizTitle}</h1>
         </div>
-        {me && (
-          <div style={{ textAlign: 'right', lineHeight: 1.3 }}>
-            <div style={{ fontWeight: 700 }}>{me.nickname}</div>
-            <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{me.score} pts</div>
-          </div>
-        )}
+        <span className="row" style={{ gap: '0.75rem' }}>
+          <MusicToggle playing={status === 'lobby' || status === 'question'} />
+          {me && (
+            <div style={{ textAlign: 'right', lineHeight: 1.3 }}>
+              <div style={{ fontWeight: 700 }}>{me.nickname}</div>
+              <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{me.score} pts</div>
+            </div>
+          )}
+        </span>
       </header>
 
       <ErrorBox error={actionError} />
@@ -143,7 +146,7 @@ export default function LivePlayer() {
           <div className="feedback wait">
             {me ? (
               <>
-                <div style={{ fontSize: '3rem', lineHeight: 1 }}>{MEDALS[me.rank] ?? '🎉'}</div>
+                <div className="finish-mark">{me.rank <= 3 ? <Medal rank={me.rank} size={64} /> : <Icon name="sparkles" size={52} />}</div>
                 <h2 style={{ marginTop: '0.5rem' }}>
                   {ordinal(me.rank)} sur {game.players.length}
                 </h2>

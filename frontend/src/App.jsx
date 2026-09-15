@@ -1,8 +1,10 @@
 import { Link, NavLink, Navigate, Outlet, useLocation } from 'react-router-dom'
 import AiChatWidget from './components/AiChatWidget'
+import Brand from './components/Brand'
+import { Avatar } from './components/ui'
 import { useAuth } from './auth'
 
-const ROLE_LABELS = { user: 'joueur', prof: 'professeur', admin: 'administrateur' }
+const ROLE_LABELS = { user: 'élève', prof: 'professeur', admin: 'administrateur' }
 
 /** Toute l'application est derrière la connexion. */
 export default function App() {
@@ -17,22 +19,23 @@ export default function App() {
     <div className="app">
       <header className="topbar">
         <NavLink to="/" className="brand">
-          <span className="brand-mark">Q</span> QuizLab
+          <Brand />
         </NavLink>
 
         <nav className="nav">
           <NavLink to="/" end>
-            Bibliothèque
+            Accueil
           </NavLink>
           <NavLink to="/join">Rejoindre</NavLink>
-          <NavLink to="/history">Mes parties</NavLink>
+          <NavLink to="/history">Mon parcours</NavLink>
+          <NavLink to="/communaute">Communauté</NavLink>
           {canCreate && <NavLink to="/create">Créer</NavLink>}
           {isAdmin && <NavLink to="/admin">Administration</NavLink>}
         </nav>
 
         <div className="identity">
           <Link to="/account" className="identity-link" title="Mon compte">
-            <span className="avatar">{user.name.slice(0, 2).toUpperCase()}</span>
+            <Avatar name={user.name} />
             <div style={{ lineHeight: 1.2 }}>
               <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{user.name}</div>
               <div style={{ fontSize: '0.72rem', color: canCreate ? 'var(--accent-strong)' : 'var(--text-faint)' }}>
@@ -51,6 +54,7 @@ export default function App() {
       </main>
 
       <footer className="site-footer">
+        <span>QuizLab — apprendre, jouer et progresser ensemble</span>
         <Link to="/account">Mon compte</Link>
         <Link to="/confidentialite">Confidentialité et données personnelles</Link>
       </footer>

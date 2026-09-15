@@ -37,7 +37,11 @@ abstract class ApiTestCase extends WebTestCase
 
     /**
      * Inscrit le compte au premier appel et renvoie son jeton. Le rôle passe par
-     * une vraie clé d'accès : clé de secours pour un admin, clé générée pour un prof.
+     * une vraie clé d'accès : clé de secours pour le premier admin (« direction »), puis clé
+     * générée par lui pour les autres — la clé de secours ne sert plus une fois un admin inscrit.
+     *
+     * Chaque compte s'inscrit depuis sa propre adresse IP : un test qui fait jouer plus de cinq
+     * comptes ne doit pas buter sur la limite d'inscriptions par IP.
      */
     protected function account(string $name, string $role = 'user'): string
     {
@@ -46,7 +50,7 @@ abstract class ApiTestCase extends WebTestCase
         }
 
         $key = match ($role) {
-            'admin' => 'admin',
+            'admin' => 'direction' === $name ? 'admin' : $this->request('POST', '/api/access-keys', ['role' => 'admin'], as: $this->admin())['value'],
             'prof' => $this->request('POST', '/api/access-keys', ['role' => 'prof'], as: $this->admin())['value'],
             default => null,
         };
@@ -57,7 +61,7 @@ abstract class ApiTestCase extends WebTestCase
             'password' => self::PASSWORD,
             'consent' => true,
             'accessKey' => $key,
-        ]);
+        ], server: ['REMOTE_ADDR' => '10.0.0.'.(count($this->tokens) + 1)]);
         $this->assertResponseStatusCodeSame(201, 'Inscription impossible pour '.$name);
 
         return $this->tokens[$name] = $payload['token'];
@@ -73,9 +77,9 @@ abstract class ApiTestCase extends WebTestCase
     /**
      * @param string|null $as pseudo du compte qui fait la requête (inscrit comme joueur s'il n'existe pas)
      */
-    protected function request(string $method, string $uri, ?array $payload = null, ?string $as = null, array $files = []): mixed
+    protected function request(string $method, string $uri, ?array $payload = null, ?string $as = null, array $files = [], array $server = []): mixed
     {
-        $server = $files ? [] : ['CONTENT_TYPE' => 'application/json'];
+        $server += $files ? [] : ['CONTENT_TYPE' => 'application/json'];
 
         if (null !== $as) {
             $server['HTTP_AUTHORIZATION'] = 'Bearer '.$this->account($as);

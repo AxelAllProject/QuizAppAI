@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { api, assetUrl } from '../api'
 import { Tile } from '../components/live'
+import MusicToggle from '../components/MusicToggle'
 import { ErrorBox, Loader } from '../components/ui'
 
 export default function Play() {
@@ -42,7 +43,8 @@ export default function Play() {
         method: 'POST',
         body: {
           answers,
-          durationSeconds: Math.round((Date.now() - startedAt.current) / 1000),
+          // Le serveur refuse une durée nulle (elle fausserait le classement).
+          durationSeconds: Math.max(1, Math.round((Date.now() - startedAt.current) / 1000)),
         },
       })
       navigate(`/session/${session.id}`, { replace: true, state: { session } })
@@ -89,9 +91,12 @@ export default function Play() {
           <span className={`badge ${quiz.difficulty}`}>{quiz.difficulty}</span>
           <h1 style={{ marginTop: '0.5rem' }}>{quiz.title}</h1>
         </div>
-        <Link className="btn ghost sm" to="/">
-          Quitter
-        </Link>
+        <span className="row" style={{ gap: '0.35rem' }}>
+          <MusicToggle playing={!sending} />
+          <Link className="btn ghost sm" to="/">
+            Quitter
+          </Link>
+        </span>
       </header>
 
       <div className="card">

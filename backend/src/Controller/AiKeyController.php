@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Dto\AiKeyFilter;
 use App\Dto\CreateAiKeyInput;
 use App\Entity\AiKey;
 use App\Repository\AiKeyRepository;
@@ -12,6 +13,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Psr\Clock\ClockInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpKernel\Attribute\MapQueryString;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -35,9 +37,9 @@ class AiKeyController extends AbstractController
     }
 
     #[Route('', name: 'api_ai_key_list', methods: ['GET'])]
-    public function list(): JsonResponse
+    public function list(#[MapQueryString] AiKeyFilter $filter = new AiKeyFilter()): JsonResponse
     {
-        return $this->json(array_map($this->normalize(...), $this->keys->findAllOrdered()));
+        return $this->json(array_map($this->normalize(...), $this->keys->search($filter->search, $filter->status)));
     }
 
     /**
@@ -113,6 +115,13 @@ class AiKeyController extends AbstractController
             'revokedAt' => $key->getRevokedAt()?->format(\DateTimeInterface::ATOM),
             'active' => !$key->isRevoked() && !$expired && !$key->isExhausted(),
             'expired' => $expired,
+            'status' => match (true) {
+                $key->isRevoked() => 'revoked',
+                $expired => 'expired',
+                $key->isExhausted() => 'exhausted',
+                null === $key->getRedeemedBy() => 'unclaimed',
+                default => 'active',
+            },
             'redeemedBy' => $key->getRedeemedByName(),
             'redeemedAt' => $key->getRedeemedAt()?->format(\DateTimeInterface::ATOM),
         ];

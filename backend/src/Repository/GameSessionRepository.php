@@ -49,26 +49,35 @@ class GameSessionRepository extends ServiceEntityRepository
     }
 
     /**
-     * Toutes les parties d'un quiz, du meilleur score au moins bon.
-     * À score égal, la partie la plus rapide passe devant.
+     * Classement d'un quiz : la première partie de chaque joueur, du meilleur score au
+     * moins bon ; à score égal, la plus rapide passe devant (sans durée : en dernier).
+     *
+     * Seule la première partie compte : la correction affichée à la fin donne les bonnes
+     * réponses, rejouer juste derrière suffirait sinon pour finir premier. Tri et limite
+     * sont faits en base, sans charger toutes les parties du quiz.
      *
      * @return GameSession[]
      */
-    public function findByQuiz(int $quizId): array
+    public function findByQuiz(int $quizId, int $limit = 100): array
     {
-        $sessions = $this->createQueryBuilder('s')
-            ->andWhere('s.quiz = :quiz')->setParameter('quiz', $quizId)
+        $firstAttempts = $this->getEntityManager()->createQueryBuilder()
+            ->select('MIN(f.id)')
+            ->from(GameSession::class, 'f')
+            ->andWhere('f.quiz = :quiz')
+            ->groupBy('f.user');
+
+        return $this->createQueryBuilder('s')
+            ->addSelect('CASE WHEN s.total > 0 THEN s.score * 1.0 / s.total ELSE 0 END AS HIDDEN accuracy')
+            ->addSelect('CASE WHEN s.durationSeconds IS NULL THEN 1 ELSE 0 END AS HIDDEN withoutDuration')
+            ->andWhere(sprintf('s.id IN (%s)', $firstAttempts->getDQL()))
+            ->setParameter('quiz', $quizId)
+            ->orderBy('accuracy', 'DESC')
+            ->addOrderBy('withoutDuration', 'ASC')
+            ->addOrderBy('s.durationSeconds', 'ASC')
+            ->addOrderBy('s.id', 'ASC')
+            ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
-
-        usort($sessions, static function (GameSession $a, GameSession $b): int {
-            $ratio = static fn (GameSession $s): float => $s->getTotal() > 0 ? $s->getScore() / $s->getTotal() : 0.0;
-
-            return [$ratio($b), -($a->getDurationSeconds() ?? PHP_INT_MAX)]
-                <=> [$ratio($a), -($b->getDurationSeconds() ?? PHP_INT_MAX)];
-        });
-
-        return $sessions;
     }
 
     /** Classement : meilleur pourcentage par joueur. */

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api'
+import { Icon } from './Icon'
 
 const CHOICE_COUNTS = [2, 3, 4, 5, 6]
 
@@ -76,9 +77,9 @@ export default function AiChatWidget() {
       {open && (
         <div className="ai-widget-panel card">
           <div className="row" style={{ justifyContent: 'space-between' }}>
-            <h2 style={{ fontSize: '1rem' }}>✨ Créer un quiz</h2>
+            <h2 style={{ fontSize: '1rem' }}><Icon name="sparkles" size={18} /> Créer un quiz</h2>
             <button type="button" className="btn ghost sm" onClick={() => setOpen(false)} aria-label="Fermer">
-              ✕
+              <Icon name="x" size={16} />
             </button>
           </div>
 
@@ -141,7 +142,7 @@ export default function AiChatWidget() {
       )}
 
       <button type="button" className="ai-bubble-toggle" onClick={() => setOpen((value) => !value)}>
-        {open ? '✕' : '✨'}
+        <Icon name={open ? 'x' : 'sparkles'} size={18} />
         <span>{open ? 'Fermer' : 'Créer un quiz'}</span>
       </button>
     </div>

@@ -12,6 +12,8 @@ class LoginInput
 
         #[\SensitiveParameter]
         #[Assert\NotBlank(message: 'Indique ton mot de passe.')]
+        // Au-delà, les hacheurs de Symfony lèvent une exception au lieu de répondre « incorrect ».
+        #[Assert\Length(max: 4096)]
         public readonly string $password = '',
     ) {
     }

@@ -3,7 +3,9 @@
 namespace App\Tests\Service;
 
 use App\Entity\AccessKey;
+use App\Entity\User;
 use App\Repository\AccessKeyRepository;
+use App\Repository\UserRepository;
 use App\Service\AccessKeyRedeemer;
 use PHPUnit\Framework\TestCase;
 
@@ -11,9 +13,10 @@ class AccessKeyRedeemerTest extends TestCase
 {
     public function testTheDefaultBootstrapCodeWorksOutsideProduction(): void
     {
-        $redeemer = $this->redeemer(bootstrapKey: 'admin', environment: 'dev');
+        $user = new User();
 
-        $this->assertSame(AccessKey::ROLE_ADMIN, $redeemer->redeem('admin'));
+        $this->assertTrue($this->redeemer(bootstrapKey: 'admin', environment: 'dev')->redeem('admin', $user));
+        $this->assertSame(User::ROLE_ADMIN, $user->getRole());
     }
 
     /**
@@ -22,31 +25,58 @@ class AccessKeyRedeemerTest extends TestCase
      */
     public function testTheDefaultBootstrapCodeIsRefusedInProduction(): void
     {
-        $redeemer = $this->redeemer(bootstrapKey: 'admin', environment: 'prod');
+        $user = new User();
 
-        $this->assertNull($redeemer->redeem('admin'));
+        $this->assertFalse($this->redeemer(bootstrapKey: 'admin', environment: 'prod')->redeem('admin', $user));
+        $this->assertSame(User::ROLE_PLAYER, $user->getRole());
     }
 
     public function testACustomBootstrapCodeStillWorksInProduction(): void
     {
         $redeemer = $this->redeemer(bootstrapKey: 'XPYX-KDEU-2RLE-97PV', environment: 'prod');
 
-        $this->assertSame(AccessKey::ROLE_ADMIN, $redeemer->redeem('XPYX-KDEU-2RLE-97PV'));
+        $this->assertTrue($redeemer->redeem('XPYX-KDEU-2RLE-97PV', new User()));
     }
 
     public function testAnEmptyBootstrapCodeNeverGrantsAnything(): void
     {
         $redeemer = $this->redeemer(bootstrapKey: '', environment: 'dev');
 
-        $this->assertNull($redeemer->redeem(''));
-        $this->assertNull($redeemer->redeem('admin'));
+        $this->assertFalse($redeemer->redeem('', new User()));
+        $this->assertFalse($redeemer->redeem('admin', new User()));
     }
 
-    private function redeemer(string $bootstrapKey, string $environment): AccessKeyRedeemer
+    /** La clé de secours crée le premier admin ; ensuite, elle ne doit plus être une porte d'entrée. */
+    public function testTheBootstrapCodeIsRefusedOnceAnAdminExists(): void
     {
-        $keys = $this->createStub(AccessKeyRepository::class);
-        $keys->method('findActive')->willReturn(null);
+        $redeemer = $this->redeemer(bootstrapKey: 'XPYX-KDEU-2RLE-97PV', environment: 'prod', adminExists: true);
 
-        return new AccessKeyRedeemer($bootstrapKey, $environment, $keys);
+        $this->assertFalse($redeemer->redeem('XPYX-KDEU-2RLE-97PV', new User()));
+    }
+
+    public function testAnAdminKeyAlreadyClaimedBySomeoneElseGrantsNothing(): void
+    {
+        $user = new User();
+        $redeemer = $this->redeemer(key: (new AccessKey())->setRole(AccessKey::ROLE_ADMIN), claimSucceeds: false);
+
+        $this->assertFalse($redeemer->redeem('CODE', $user));
+        $this->assertSame(User::ROLE_PLAYER, $user->getRole());
+    }
+
+    private function redeemer(
+        string $bootstrapKey = '',
+        string $environment = 'dev',
+        bool $adminExists = false,
+        ?AccessKey $key = null,
+        bool $claimSucceeds = true,
+    ): AccessKeyRedeemer {
+        $keys = $this->createStub(AccessKeyRepository::class);
+        $keys->method('findActive')->willReturn($key);
+        $keys->method('claim')->willReturn($claimSucceeds);
+
+        $users = $this->createStub(UserRepository::class);
+        $users->method('hasAdmin')->willReturn($adminExists);
+
+        return new AccessKeyRedeemer($bootstrapKey, $environment, $keys, $users);
     }
 }

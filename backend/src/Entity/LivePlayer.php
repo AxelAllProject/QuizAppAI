@@ -25,8 +25,8 @@ class LivePlayer
     #[ORM\Column]
     private \DateTimeImmutable $joinedAt;
 
-    /** @var Collection<int, LiveAnswer> */
-    #[ORM\OneToMany(mappedBy: 'player', targetEntity: LiveAnswer::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
+    /** @var Collection<int, LiveAnswer> indexées par numéro de question */
+    #[ORM\OneToMany(mappedBy: 'player', targetEntity: LiveAnswer::class, cascade: ['persist', 'remove'], orphanRemoval: true, indexBy: 'questionIndex')]
     private Collection $answers;
 
     public function __construct(
@@ -81,7 +81,7 @@ class LivePlayer
 
     public function addAnswer(LiveAnswer $answer): self
     {
-        $this->answers->add($answer);
+        $this->answers->set($answer->getQuestionIndex(), $answer);
         $this->score += $answer->getPoints();
 
         return $this;
@@ -89,13 +89,7 @@ class LivePlayer
 
     public function answerFor(int $questionIndex): ?LiveAnswer
     {
-        foreach ($this->answers as $answer) {
-            if ($answer->getQuestionIndex() === $questionIndex) {
-                return $answer;
-            }
-        }
-
-        return null;
+        return $this->answers->get($questionIndex);
     }
 
     public function getCorrectCount(): int

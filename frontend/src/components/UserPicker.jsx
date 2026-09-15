@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Icon } from './Icon'
 
 const ROLE_LABELS = { user: 'joueur', prof: 'professeur', admin: 'administrateur' }
 
@@ -21,7 +22,7 @@ export default function UserPicker({ users, value, onChange, placeholder = 'Cher
       <span className="badge accent user-picker-selected">
         Attribuer à {selected.name}
         <button type="button" onClick={() => onChange(null)} aria-label="Annuler l’attribution">
-          ✕
+          <Icon name="x" size={16} />
         </button>
       </span>
     )

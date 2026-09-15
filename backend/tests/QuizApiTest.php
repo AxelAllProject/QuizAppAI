@@ -181,6 +181,56 @@ class QuizApiTest extends ApiTestCase
         $this->assertSame('chloe', $ranking[1]['player']);
     }
 
+    public function testRankingKeepsOnlyEachPlayersFirstAttempt(): void
+    {
+        $quizId = $this->createQuiz();
+        $questions = $this->request('GET', '/api/quizzes/'.$quizId, as: 'bob')['questions'];
+
+        // bob se trompe partout, lit les bonnes réponses dans la correction, puis rejoue parfaitement en 1 s.
+        $first = $this->request('POST', '/api/quizzes/'.$quizId.'/sessions', [
+            'answers' => [$questions[0]['id'] => 0, $questions[1]['id'] => 1],
+            'durationSeconds' => 30,
+        ], as: 'bob');
+        $this->request('POST', '/api/quizzes/'.$quizId.'/sessions', [
+            'answers' => array_combine(array_column($questions, 'id'), array_column($first['answers'], 'correctIndex')),
+            'durationSeconds' => 1,
+        ], as: 'bob');
+        $this->request('POST', '/api/quizzes/'.$quizId.'/sessions', [
+            'answers' => [$questions[0]['id'] => 1, $questions[1]['id'] => 1],
+            'durationSeconds' => 20,
+        ], as: 'chloe');
+
+        $ranking = $this->request('GET', '/api/quizzes/'.$quizId.'/sessions', as: 'chloe');
+
+        $this->assertSame(['chloe', 'bob'], array_column($ranking, 'player'), 'La partie rejouée ne doit pas compter.');
+        $this->assertSame([50, 0], array_column($ranking, 'accuracy'));
+        // La partie rejouée reste dans l'historique de bob.
+        $this->assertCount(2, $this->request('GET', '/api/sessions', as: 'bob'));
+    }
+
+    public function testASessionCannotClaimAnAbsurdDuration(): void
+    {
+        $quizId = $this->createQuiz();
+
+        foreach ([0, -5, 1_000_000] as $duration) {
+            $this->request('POST', '/api/quizzes/'.$quizId.'/sessions', ['answers' => [], 'durationSeconds' => $duration], as: 'bob');
+            $this->assertResponseStatusCodeSame(422, sprintf('Durée %d acceptée.', $duration));
+        }
+    }
+
+    public function testRecordingSessionsIsRateLimited(): void
+    {
+        $quizId = $this->createQuiz();
+
+        for ($i = 0; $i < 30; ++$i) {
+            $this->request('POST', '/api/quizzes/'.$quizId.'/sessions', ['answers' => []], as: 'bob');
+            $this->assertResponseStatusCodeSame(201);
+        }
+
+        $this->request('POST', '/api/quizzes/'.$quizId.'/sessions', ['answers' => []], as: 'bob');
+        $this->assertResponseStatusCodeSame(429);
+    }
+
     public function testAccessKeysAreManagedByAdminsOnly(): void
     {
         $this->account('prof.martin', 'prof');

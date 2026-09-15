@@ -17,16 +17,47 @@ class LiveGameRepository extends ServiceEntityRepository
         parent::__construct($registry, LiveGame::class);
     }
 
-    /** Un code PIN finit par resservir : on prend la partie la plus récente. */
+    /**
+     * Un code PIN finit par resservir : on prend la partie la plus récente.
+     *
+     * Chaque écran interroge l'état toutes les secondes : tout ce qu'il affiche est chargé
+     * d'un coup (animateur, quiz et questions, puis joueurs et réponses), en un nombre de
+     * requêtes qui ne dépend pas du nombre de joueurs. Deux requêtes plutôt qu'une : joindre
+     * questions et réponses ensemble multiplierait les lignes (questions × réponses).
+     */
     public function findLatestByPin(string $pin): ?LiveGame
     {
-        return $this->createQueryBuilder('g')
+        $id = $this->createQueryBuilder('g')
+            ->select('MAX(g.id)')
             ->andWhere('g.pin = :pin')
             ->setParameter('pin', $pin)
-            ->orderBy('g.id', 'DESC')
-            ->setMaxResults(1)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        if (null === $id) {
+            return null;
+        }
+
+        $game = $this->createQueryBuilder('g')
+            ->addSelect('host', 'quiz', 'question')
+            ->join('g.host', 'host')
+            ->join('g.quiz', 'quiz')
+            ->leftJoin('quiz.questions', 'question')
+            ->andWhere('g.id = :id')
+            ->setParameter('id', $id)
             ->getQuery()
             ->getOneOrNullResult();
+
+        $this->createQueryBuilder('g')
+            ->addSelect('player', 'answer')
+            ->leftJoin('g.players', 'player')
+            ->leftJoin('player.answers', 'answer')
+            ->andWhere('g.id = :id')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->getResult();
+
+        return $game;
     }
 
     public function isPinInUse(string $pin): bool

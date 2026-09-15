@@ -42,10 +42,44 @@ class AiKeyRepository extends ServiceEntityRepository
     /** @return AiKey[] */
     public function findAllOrdered(): array
     {
-        return $this->createQueryBuilder('k')
-            ->orderBy('k.revokedAt', 'ASC')
-            ->addOrderBy('k.createdAt', 'DESC')
-            ->getQuery()
-            ->getResult();
+        return $this->search();
+    }
+
+    /**
+     * Listing du back-office : recherche libre (code, étiquette, détenteur) et filtre d'état.
+     * « active » veut dire réellement utilisable : ni révoquée, ni périmée, ni épuisée.
+     *
+     * @return AiKey[]
+     */
+    public function search(?string $term = null, ?string $status = null): array
+    {
+        $qb = $this->createQueryBuilder('k')
+            ->orderBy('k.createdAt', 'DESC')
+            // Départage les clés créées à la même seconde : sans ça l'ordre du listing varie.
+            ->addOrderBy('k.id', 'DESC');
+
+        if (null !== $term && '' !== trim($term)) {
+            $qb->andWhere('LOWER(k.value) LIKE :term OR LOWER(k.label) LIKE :term OR LOWER(k.redeemedByName) LIKE :term')
+                ->setParameter('term', '%'.mb_strtolower(trim($term)).'%');
+        }
+
+        // Un paramètre déclaré mais absent du DQL fait échouer la requête : on ne lie
+        // `now` que dans les branches qui s'en servent réellement.
+        match ($status) {
+            null => null,
+            'revoked' => $qb->andWhere('k.revokedAt IS NOT NULL'),
+            'expired' => $qb
+                ->andWhere('k.revokedAt IS NULL AND k.expiresAt IS NOT NULL AND k.expiresAt <= :now')
+                ->setParameter('now', $this->clock->now()),
+            'exhausted' => $qb->andWhere('k.revokedAt IS NULL AND k.remainingGenerations <= 0'),
+            'unclaimed' => $qb->andWhere('k.revokedAt IS NULL AND k.redeemedBy IS NULL'),
+            default => $qb
+                ->andWhere('k.revokedAt IS NULL')
+                ->andWhere('k.remainingGenerations > 0')
+                ->andWhere('k.expiresAt IS NULL OR k.expiresAt > :now')
+                ->setParameter('now', $this->clock->now()),
+        };
+
+        return $qb->getQuery()->getResult();
     }
 }

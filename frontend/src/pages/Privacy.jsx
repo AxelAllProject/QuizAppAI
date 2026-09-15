@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth'
+import Brand from '../components/Brand'
 
 /**
  * Responsable du traitement : à renseigner avant toute mise en ligne
@@ -19,7 +20,7 @@ export default function Privacy() {
       <header className="page-head">
         <div>
           <Link to={user ? '/' : '/login'} className="brand" style={{ marginBottom: '1rem' }}>
-            <span className="brand-mark">Q</span> QuizLab
+            <Brand />
           </Link>
           <h1>Confidentialité et données personnelles</h1>
           <p>Version du 10 septembre 2026 — ce que QuizLab collecte, pourquoi, combien de temps, et tes droits.</p>

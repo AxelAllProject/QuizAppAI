@@ -32,6 +32,8 @@ class AuthController extends AbstractController
         private readonly EntityManagerInterface $em,
         #[Autowire(service: 'limiter.login_attempts')]
         private readonly RateLimiterFactory $loginAttemptsLimiter,
+        #[Autowire(service: 'limiter.login_failures_per_account')]
+        private readonly RateLimiterFactory $loginFailuresPerAccountLimiter,
         #[Autowire(service: 'limiter.registration_attempts')]
         private readonly RateLimiterFactory $registrationAttemptsLimiter,
     ) {
@@ -55,26 +57,20 @@ class AuthController extends AbstractController
             $errors[] = 'Ce pseudo est déjà pris.';
         }
 
-        $role = User::ROLE_PLAYER;
+        $user = (new User())
+            ->setEmail($input->email)
+            ->setUsername($input->name)
+            ->acceptPrivacyPolicy();
 
         // La clé n'est consommée qu'une fois le reste du formulaire valide.
-        if ([] === $errors && '' !== trim((string) $input->accessKey)) {
-            $role = $this->redeemer->redeem((string) $input->accessKey);
-
-            if (null === $role) {
-                $errors[] = "Clé d'accès invalide ou révoquée.";
-            }
+        if ([] === $errors && '' !== trim((string) $input->accessKey) && !$this->redeemer->redeem((string) $input->accessKey, $user)) {
+            $errors[] = "Clé d'accès invalide ou révoquée.";
         }
 
         if ([] !== $errors) {
             return $this->json(['error' => 'Le formulaire contient des erreurs.', 'errors' => $errors], 422);
         }
 
-        $user = (new User())
-            ->setEmail($input->email)
-            ->setUsername($input->name)
-            ->setRole($role)
-            ->acceptPrivacyPolicy();
         $user->setPassword($this->hasher->hashPassword($user, $input->password));
 
         $this->em->persist($user);
@@ -90,12 +86,31 @@ class AuthController extends AbstractController
             return $response;
         }
 
+        // La limite par IP ne suffit pas contre un attaquant qui change d'adresse à chaque essai :
+        // chaque compte a aussi son compteur d'échecs. L'adresse est hachée pour ne pas se retrouver
+        // en clair dans le cache du limiteur.
+        $accountLimiter = $this->loginFailuresPerAccountLimiter->create(hash('sha256', mb_strtolower(trim($input->email))));
+
+        if (0 === ($limit = $accountLimiter->consume(0))->getRemainingTokens()) {
+            return $this->json(['error' => 'Trop de tentatives de connexion : réessaie plus tard.'], 429, $this->retryAfterHeader($limit));
+        }
+
         $user = $this->users->findOneByEmail($input->email);
+
+        if (!$user) {
+            // Hachage pour rien, mais qui prend autant de temps que la vérification d'un vrai mot de
+            // passe : sinon, la rapidité de la réponse révélerait quelles adresses ont un compte.
+            $this->hasher->hashPassword(new User(), $input->password);
+        }
 
         // Même message dans les deux cas : on ne révèle pas quelles adresses ont un compte.
         if (!$user || !$this->hasher->isPasswordValid($user, $input->password)) {
+            $accountLimiter->consume();
+
             return $this->json(['error' => 'E-mail ou mot de passe incorrect.'], 401);
         }
+
+        $accountLimiter->reset();
 
         if ($this->hasher->needsRehash($user)) {
             $user->setPassword($this->hasher->hashPassword($user, $input->password));

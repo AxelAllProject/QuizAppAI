@@ -8,11 +8,14 @@ use App\Repository\GameSessionRepository;
 use App\Repository\QuizRepository;
 use App\Service\Identity;
 use App\Service\QuizNormalizer;
+use App\Service\SessionGrader;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/api')]
@@ -24,50 +27,31 @@ class SessionController extends AbstractController
         private readonly EntityManagerInterface $em,
         private readonly Identity $identity,
         private readonly QuizNormalizer $normalizer,
+        private readonly SessionGrader $grader,
+        #[Autowire(service: 'limiter.quiz_sessions')]
+        private readonly RateLimiterFactory $quizSessionsLimiter,
     ) {
     }
 
-    /** Correction d'une partie : le front envoie ses choix, le serveur calcule le score. */
+    /**
+     * Correction d'une partie : le front envoie ses choix, le serveur calcule le score.
+     * La correction renvoyée contient les bonnes réponses : c'est pourquoi le classement
+     * du quiz ne retient que la première partie de chaque joueur (voir findByQuiz).
+     */
     #[Route('/quizzes/{id}/sessions', name: 'api_session_create', methods: ['POST'], requirements: ['id' => '\d+'])]
     public function play(int $id, #[MapRequestPayload] PlayInput $input): JsonResponse
     {
+        if (!$this->quizSessionsLimiter->create((string) $this->identity->user()->getId())->consume()->isAccepted()) {
+            return $this->json(['error' => 'Trop de parties enregistrées : réessaie dans quelques minutes.'], 429);
+        }
+
         $quiz = $this->quizzes->find($id);
 
         if (!$quiz) {
             return $this->json(['error' => 'Quiz introuvable.'], 404);
         }
 
-        $given = $input->answers;
-        $score = 0;
-        $details = [];
-
-        foreach ($quiz->getQuestions() as $question) {
-            $chosen = $given[(string) $question->getId()] ?? $given[$question->getId()] ?? null;
-            $chosen = is_numeric($chosen) ? (int) $chosen : null;
-            $correct = $chosen === $question->getCorrectIndex();
-            $score += $correct ? 1 : 0;
-
-            $details[] = [
-                'questionId' => $question->getId(),
-                'text' => $question->getText(),
-                'image' => $question->getImage(),
-                'choices' => $question->getChoices(),
-                'chosenIndex' => $chosen,
-                'correctIndex' => $question->getCorrectIndex(),
-                'correct' => $correct,
-                'explanation' => $question->getExplanation(),
-            ];
-        }
-
-        $session = (new GameSession())
-            ->setQuiz($quiz)
-            ->setQuizTitle($quiz->getTitle())
-            ->setPlayer($this->identity->name())
-            ->setUser($this->identity->user())
-            ->setScore($score)
-            ->setTotal(count($details))
-            ->setDurationSeconds($input->durationSeconds)
-            ->setAnswers($details);
+        $session = $this->grader->grade($quiz, $input->answers, $this->identity->name(), $this->identity->user(), $input->durationSeconds);
 
         $this->em->persist($session);
         $this->em->flush();
@@ -126,7 +110,7 @@ class SessionController extends AbstractController
         $totalQuestions = array_sum(array_map(static fn (GameSession $s) => $s->getTotal(), $sessions));
 
         return $this->json([
-            'quizCount' => count($this->quizzes->findAll()),
+            'quizCount' => $this->quizzes->count(),
             'sessionCount' => count($sessions),
             'playerCount' => count(array_unique(array_map(static fn (GameSession $s) => $s->getPlayer(), $sessions))),
             'globalAccuracy' => $totalQuestions > 0 ? (int) round($totalScore / $totalQuestions * 100) : 0,

@@ -3,7 +3,9 @@ import { Link, Navigate, useParams } from 'react-router-dom'
 import { assetUrl } from '../api'
 import Confetti from '../components/Confetti'
 import { LeaderboardTable, Podium, Tile, Timer, formatPin, useLiveGame, useRemainingMs } from '../components/live'
+import MusicToggle from '../components/MusicToggle'
 import { ErrorBox, Loader } from '../components/ui'
+import { Icon } from '../components/Icon'
 
 /** Écran de l'animateur, pensé pour être projeté devant la classe. */
 export default function LiveHost() {
@@ -61,11 +63,14 @@ export default function LiveHost() {
           <span className="badge accent">En direct · PIN {formatPin(game.pin)}</span>
           <h1 style={{ marginTop: '0.4rem' }}>{game.quizTitle}</h1>
         </div>
-        {status !== 'finished' && (
-          <button type="button" className="btn danger sm" onClick={stop} disabled={busy}>
-            Arrêter la partie
-          </button>
-        )}
+        <span className="row" style={{ gap: '0.35rem' }}>
+          <MusicToggle playing={status === 'lobby' || status === 'question'} />
+          {status !== 'finished' && (
+            <button type="button" className="btn danger sm" onClick={stop} disabled={busy}>
+              Arrêter la partie
+            </button>
+          )}
+        </span>
       </header>
 
       <ErrorBox error={actionError} />
@@ -137,7 +142,7 @@ export default function LiveHost() {
                   {revealed && (
                     <>
                       <span className="count">
-                        {correct ? '✓ ' : ''}
+                        {correct && <Icon name="check" size={18} strokeWidth={3} style={{ marginRight: '0.25rem' }} />}
                         {count}
                       </span>
                       <span

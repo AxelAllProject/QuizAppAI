@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { api } from '../api'
 import ImageField from '../components/ImageField'
 import { ErrorBox, Field } from '../components/ui'
+import { Icon } from '../components/Icon'
 
 const TIME_LIMITS = [5, 10, 20, 30, 60, 90, 120, 240]
 
@@ -307,7 +308,7 @@ export default function Editor() {
                           onClick={() => removeChoice(question.key, choiceIndex)}
                           aria-label="Supprimer cette proposition"
                         >
-                          ✕
+                          <Icon name="x" size={16} />
                         </button>
                       )}
                     </div>

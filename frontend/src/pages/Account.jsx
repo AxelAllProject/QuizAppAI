@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { api, downloadJson } from '../api'
 import { useAuth } from '../auth'
 import { ErrorBox, Field, formatDate } from '../components/ui'
+import { Icon } from '../components/Icon'
 
 const ROLE_LABELS = { user: 'joueur', prof: 'professeur', admin: 'administrateur' }
 
@@ -134,7 +135,7 @@ export default function Account() {
 
         {canCreate && (
           <section className="card">
-            <h2 style={{ marginBottom: '0.35rem' }}>✨ Clé IA</h2>
+            <h2 style={{ marginBottom: '0.35rem' }}><Icon name="sparkles" size={18} /> Clé IA</h2>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '0.9rem' }}>
               La génération de quiz par IA est une fonctionnalité premium : elle demande une clé IA en plus du
               rôle professeur ou administrateur, remise par un administrateur.

@@ -123,6 +123,39 @@ class LiveGameApiTest extends ApiTestCase
         $this->assertSame([], $this->request('GET', "/api/live-games/$pin", as: 'prof.martin')['players']);
     }
 
+    /**
+     * L'état est interrogé chaque seconde par chaque écran : son coût en requêtes SQL
+     * ne doit pas grandir avec le nombre de joueurs.
+     */
+    public function testPollingTheStateCostsTheSameWhateverThePlayerCount(): void
+    {
+        $pin = $this->hostGame();
+        $this->request('POST', "/api/live-games/$pin/join", as: 'bob');
+        $this->request('POST', "/api/live-games/$pin/next", as: 'prof.martin');
+        $this->request('POST', "/api/live-games/$pin/answers", ['choiceIndex' => 1], as: 'bob');
+        $withOnePlayer = $this->queriesFor("/api/live-games/$pin", 'prof.martin');
+
+        foreach (['chloe', 'dora', 'eve', 'farid'] as $name) {
+            $this->request('POST', "/api/live-games/$pin/join", as: $name);
+        }
+        $withFivePlayers = $this->queriesFor("/api/live-games/$pin", 'prof.martin');
+
+        $this->assertSame($withOnePlayer, $withFivePlayers, 'Une requête SQL par joueur à chaque interrogation.');
+        $this->assertLessThanOrEqual(5, $withFivePlayers);
+    }
+
+    private function queriesFor(string $uri, string $as): int
+    {
+        $this->account($as);
+        $queries = static::getContainer()->get('doctrine.debug_data_holder');
+        $queries->reset();
+
+        $this->request('GET', $uri, as: $as);
+        $this->assertResponseIsSuccessful();
+
+        return count($queries->getData()['default'] ?? []);
+    }
+
     private function hostGame(): string
     {
         $quizId = $this->createQuiz('prof.martin');

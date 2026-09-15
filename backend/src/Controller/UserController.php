@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Dto\RoleInput;
+use App\Dto\UserFilter;
 use App\Entity\User;
 use App\Repository\GameSessionRepository;
 use App\Repository\UserRepository;
@@ -10,6 +11,7 @@ use App\Service\Identity;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpKernel\Attribute\MapQueryString;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -31,7 +33,7 @@ class UserController extends AbstractController
     }
 
     #[Route('', name: 'api_user_list', methods: ['GET'])]
-    public function list(): JsonResponse
+    public function list(#[MapQueryString] UserFilter $filter = new UserFilter()): JsonResponse
     {
         $stats = [];
 
@@ -49,7 +51,7 @@ class UserController extends AbstractController
 
         return $this->json(array_map(
             fn (User $user) => $this->normalize($user, $stats[$user->getId()] ?? null),
-            $this->users->findAllOrdered(),
+            $this->users->search($filter->search, $filter->role),
         ));
     }
 

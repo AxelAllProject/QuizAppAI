@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 220" aria-hidden="true">
+  <rect x="10" y="30" width="340" height="176" rx="40" fill="#e6e9ff" opacity=".8"/>
+  <rect x="30" y="200" width="300" height="7" rx="3.5" fill="#d2c8b6"/>
+
+  <!-- Trois élèves -->
+  <path d="M52 200a38 38 0 0 1 76 0z" fill="#4a5bd4"/>
+  <circle cx="90" cy="138" r="22" fill="#f3c7a6"/>
+  <path d="M68 136a22 22 0 0 1 44 0c-8-7-28-9-44 0z" fill="#3a2a20"/>
+
+  <path d="M138 200a42 42 0 0 1 84 0z" fill="#ef6a3f"/>
+  <circle cx="180" cy="130" r="24" fill="#c98b62"/>
+  <path d="M156 128a24 24 0 0 1 48 0c-6-11-40-11-48 0z" fill="#1d2233"/>
+  <circle cx="158" cy="134" r="7" fill="#1d2233"/>
+  <circle cx="202" cy="134" r="7" fill="#1d2233"/>
+
+  <path d="M232 200a38 38 0 0 1 76 0z" fill="#1a8f62"/>
+  <circle cx="270" cy="138" r="22" fill="#8d5a3b"/>
+  <path d="M248 138a22 22 0 0 1 44 0c-2-14-18-20-26-18-8 1-16 8-18 18z" fill="#4a2e1e"/>
+
+  <!-- Ce qu'ils se disent -->
+  <path d="M40 58a12 12 0 0 1 12-12h40a12 12 0 0 1 12 12v12a12 12 0 0 1-12 12H80l-4 10-10-10H52a12 12 0 0 1-12-12z" fill="#fff"/>
+  <circle cx="72" cy="61" r="9" fill="#ffd35c"/>
+  <rect x="68" y="71" width="8" height="5" rx="2" fill="#d2c8b6"/>
+
+  <path d="M152 36a12 12 0 0 1 12-12h32a12 12 0 0 1 12 12v18a12 12 0 0 1-12 12h-10l-6 12-6-12h-10a12 12 0 0 1-12-12z" fill="#4a5bd4"/>
+  <path d="M173 38a7 7 0 1 1 10 6.3c-2 1-3 2.3-3 4.2v2" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="180" cy="59" r="3" fill="#fff"/>
+
+  <path d="M256 58a12 12 0 0 1 12-12h40a12 12 0 0 1 12 12v12a12 12 0 0 1-12 12h-14l-10 10-4-10h-12a12 12 0 0 1-12-12z" fill="#fff"/>
+  <path d="M276 64l7 7 13-13" fill="none" stroke="#1a8f62" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <path fill="#e0a100" d="M330 16l2.4 6.6L339 25l-6.6 2.4L330 34l-2.4-6.6L321 25l6.6-2.4z"/>
+  <path fill="#ef6a3f" d="M22 20l1.6 4.4L28 26l-4.4 1.6L22 32l-1.6-4.4L16 26l4.4-1.6z"/>
+</svg>

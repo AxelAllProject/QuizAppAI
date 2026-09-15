@@ -17,6 +17,10 @@ class AccessKeyInput
         /** Si renseigné, le rôle est accordé tout de suite à ce compte plutôt que de générer un code à partager. */
         #[Assert\Positive]
         public readonly ?int $userId = null,
+
+        /** Durée de validité du code en jours ; null = pas d'expiration. */
+        #[Assert\Range(min: 1, max: 365, notInRangeMessage: 'Choisis une expiration entre {{ min }} et {{ max }} jours.')]
+        public readonly ?int $expiresInDays = null,
     ) {
     }
 }

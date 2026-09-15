@@ -43,13 +43,12 @@ class AccountController extends AbstractController
     #[Route('/access-key', name: 'api_me_access_key', methods: ['POST'])]
     public function redeemAccessKey(#[MapRequestPayload] RedeemKeyInput $input): JsonResponse
     {
-        $role = $this->redeemer->redeem($input->key);
+        $user = $this->identity->user();
 
-        if (null === $role) {
+        if (!$this->redeemer->redeem($input->key, $user)) {
             return $this->json(['error' => "Clé d'accès invalide ou révoquée."], 403);
         }
 
-        $user = $this->identity->user()->promote($role);
         $this->em->flush();
 
         return $this->json($this->accounts->me($user));

@@ -3,10 +3,12 @@
 namespace App\Service;
 
 use App\Entity\AccessKey;
+use App\Entity\User;
 use App\Repository\AccessKeyRepository;
+use App\Repository\UserRepository;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
-/** Traduit une clé d'accès en rôle, à l'inscription ou depuis « Mon compte ». */
+/** Applique le rôle d'une clé d'accès à un compte, à l'inscription ou depuis « Mon compte ». */
 class AccessKeyRedeemer
 {
     public function __construct(
@@ -15,38 +17,70 @@ class AccessKeyRedeemer
         #[Autowire('%kernel.environment%')]
         private readonly string $environment,
         private readonly AccessKeyRepository $keys,
+        private readonly UserRepository $users,
     ) {
     }
 
     /**
-     * Rôle conféré par une clé enregistrée par un admin, ou par la clé de secours
-     * définie dans l'environnement. Null si la clé est inconnue ou révoquée.
-     * L'usage est compté mais pas enregistré : c'est à l'appelant de flusher.
+     * Promeut le compte selon une clé enregistrée par un admin, ou selon la clé de secours
+     * définie dans l'environnement. Renvoie false si la clé est inconnue, révoquée, périmée
+     * ou — pour une clé admin — déjà utilisée.
+     *
+     * Une clé prof se partage (toute une équipe pédagogique peut saisir la même) ; une clé
+     * admin, non : elle se lie au premier compte qui la saisit, comme une attribution directe.
+     * Sans ça, un code admin qui circule ferait administrateur quiconque le récupère.
+     *
+     * Rien n'est flushé, c'est à l'appelant de le faire — sauf la réservation d'une clé admin,
+     * qui doit être immédiate pour que deux saisies simultanées ne passent pas toutes les deux.
      */
-    public function redeem(#[\SensitiveParameter] string $code): ?string
+    public function redeem(#[\SensitiveParameter] string $code, User $user): bool
     {
         $code = trim($code);
 
         if ('' === $code) {
-            return null;
+            return false;
         }
 
         if ($key = $this->keys->findActive($code)) {
-            $key->markUsed();
+            if (AccessKey::ROLE_ADMIN !== $key->getRole()) {
+                $key->markUsed();
+                $user->promote($key->getRole());
 
-            return $key->getRole();
+                return true;
+            }
+
+            if (!$this->keys->claim($key)) {
+                return false;
+            }
+
+            $key->assignTo($user);
+
+            return true;
         }
 
-        return $this->bootstrapKeyIsUsable() && hash_equals($this->bootstrapKey, $code) ? AccessKey::ROLE_ADMIN : null;
+        if (!hash_equals($this->bootstrapKey, $code) || !$this->bootstrapKeyIsUsable()) {
+            return false;
+        }
+
+        $user->promote(User::ROLE_ADMIN);
+
+        return true;
     }
 
     /**
-     * « admin » est la valeur livrée par défaut dans .env (non secrète, committée) : parfaite
-     * pour le développement, mais elle rendrait n'importe qui administrateur si un déploiement
-     * oubliait de la remplacer dans .env.local. On la refuse donc explicitement en production.
+     * La clé de secours ne sert qu'à créer le premier administrateur : ensuite, les admins
+     * émettent des clés révocables depuis le back-office, et elle ne doit plus rester une
+     * porte d'entrée permanente.
+     *
+     * « admin » est en outre la valeur livrée par défaut dans .env (non secrète, committée) :
+     * on la refuse explicitement en production, au cas où un déploiement oublierait de la remplacer.
      */
     private function bootstrapKeyIsUsable(): bool
     {
-        return '' !== $this->bootstrapKey && !('prod' === $this->environment && 'admin' === $this->bootstrapKey);
+        if ('' === $this->bootstrapKey || ('prod' === $this->environment && 'admin' === $this->bootstrapKey)) {
+            return false;
+        }
+
+        return !$this->users->hasAdmin();
     }
 }

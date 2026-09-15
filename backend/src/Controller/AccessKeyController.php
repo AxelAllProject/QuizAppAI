@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Dto\AccessKeyFilter;
 use App\Dto\AccessKeyInput;
 use App\Entity\AccessKey;
 use App\Repository\AccessKeyRepository;
@@ -9,8 +10,10 @@ use App\Repository\UserRepository;
 use App\Service\AdminKeyGenerator;
 use App\Service\Identity;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Clock\ClockInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpKernel\Attribute\MapQueryString;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -26,13 +29,17 @@ class AccessKeyController extends AbstractController
         private readonly AdminKeyGenerator $generator,
         private readonly EntityManagerInterface $em,
         private readonly Identity $identity,
+        private readonly ClockInterface $clock,
     ) {
     }
 
+    /** Le filtrage est fait en base : le back-office pagine sur un jeu de clés déjà réduit. */
     #[Route('', name: 'api_access_key_list', methods: ['GET'])]
-    public function list(): JsonResponse
+    public function list(#[MapQueryString] AccessKeyFilter $filter = new AccessKeyFilter()): JsonResponse
     {
-        return $this->json(array_map($this->normalize(...), $this->keys->findAllOrdered()));
+        $keys = $this->keys->search($filter->search, $filter->role, $filter->status);
+
+        return $this->json(array_map($this->normalize(...), $keys));
     }
 
     /**
@@ -48,6 +55,10 @@ class AccessKeyController extends AbstractController
             ->setRole($input->role)
             ->setLabel(trim((string) $input->label) ?: null)
             ->setCreatedBy($this->identity->name());
+
+        if (null !== $input->expiresInDays) {
+            $key->setExpiresAt($this->clock->now()->modify(sprintf('+%d days', $input->expiresInDays)));
+        }
 
         if (null !== $input->userId) {
             $user = $this->users->find($input->userId);
@@ -101,7 +112,10 @@ class AccessKeyController extends AbstractController
             'createdBy' => $key->getCreatedBy(),
             'createdAt' => $key->getCreatedAt()->format(\DateTimeInterface::ATOM),
             'revokedAt' => $key->getRevokedAt()?->format(\DateTimeInterface::ATOM),
-            'active' => $key->isActive(),
+            'expiresAt' => $key->getExpiresAt()?->format(\DateTimeInterface::ATOM),
+            'expired' => $key->isExpired($this->clock->now()),
+            'status' => $key->status($this->clock->now()),
+            'active' => $key->isUsable($this->clock->now()),
             'usageCount' => $key->getUsageCount(),
             'lastUsedAt' => $key->getLastUsedAt()?->format(\DateTimeInterface::ATOM),
             'assignedTo' => $key->getAssignedToName(),

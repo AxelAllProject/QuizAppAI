@@ -16,6 +16,12 @@ class AccessKey
     public const ROLE_ADMIN = 'admin';
     public const ROLES = [self::ROLE_TEACHER, self::ROLE_ADMIN];
 
+    public const STATUS_ACTIVE = 'active';
+    public const STATUS_ASSIGNED = 'assigned';
+    public const STATUS_EXPIRED = 'expired';
+    public const STATUS_REVOKED = 'revoked';
+    public const STATUSES = [self::STATUS_ACTIVE, self::STATUS_ASSIGNED, self::STATUS_EXPIRED, self::STATUS_REVOKED];
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -39,6 +45,10 @@ class AccessKey
 
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $revokedAt = null;
+
+    /** Fin de validité facultative : passée cette date, la clé ne confère plus aucun rôle. */
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $expiresAt = null;
 
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $lastUsedAt = null;
@@ -125,6 +135,43 @@ class AccessKey
     public function isActive(): bool
     {
         return null === $this->revokedAt;
+    }
+
+    public function getExpiresAt(): ?\DateTimeImmutable
+    {
+        return $this->expiresAt;
+    }
+
+    public function setExpiresAt(?\DateTimeImmutable $expiresAt): self
+    {
+        $this->expiresAt = $expiresAt;
+
+        return $this;
+    }
+
+    public function isExpired(\DateTimeImmutable $now): bool
+    {
+        return null !== $this->expiresAt && $this->expiresAt <= $now;
+    }
+
+    /** Une clé périmée ne vaut pas mieux qu'une clé révoquée : elle n'accorde plus rien. */
+    public function isUsable(\DateTimeImmutable $now): bool
+    {
+        return $this->isActive() && !$this->isExpired($now);
+    }
+
+    /**
+     * État unique, tel qu'affiché dans le back-office. L'attribution directe prime :
+     * la clé est techniquement révoquée, mais ce qu'il faut lire, c'est qu'elle a servi.
+     */
+    public function status(\DateTimeImmutable $now): string
+    {
+        return match (true) {
+            null !== $this->assignedTo || null !== $this->assignedToName => self::STATUS_ASSIGNED,
+            !$this->isActive() => self::STATUS_REVOKED,
+            $this->isExpired($now) => self::STATUS_EXPIRED,
+            default => self::STATUS_ACTIVE,
+        };
     }
 
     public function revoke(): self

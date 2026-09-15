@@ -19,6 +19,11 @@ class UserRepository extends ServiceEntityRepository
         return $this->findOneBy(['email' => mb_strtolower(trim($email))]);
     }
 
+    public function hasAdmin(): bool
+    {
+        return $this->count(['role' => User::ROLE_ADMIN]) > 0;
+    }
+
     /** « Axel » et « axel » ne peuvent pas coexister : on s'y tromperait dans un classement. */
     public function isUsernameTaken(string $username): bool
     {
@@ -33,10 +38,31 @@ class UserRepository extends ServiceEntityRepository
     /** @return User[] */
     public function findAllOrdered(): array
     {
-        return $this->createQueryBuilder('u')
+        return $this->search();
+    }
+
+    /**
+     * Annuaire du back-office : recherche par pseudo et filtre par rôle, faits en base.
+     *
+     * @return User[]
+     */
+    public function search(?string $term = null, ?string $role = null): array
+    {
+        $qb = $this->createQueryBuilder('u')
             ->orderBy('u.lastSeenAt', 'DESC')
-            ->getQuery()
-            ->getResult();
+            // Départage les comptes vus à la même seconde : sans ça l'ordre du listing varie.
+            ->addOrderBy('u.id', 'DESC');
+
+        if (null !== $term && '' !== trim($term)) {
+            $qb->andWhere('LOWER(u.username) LIKE :term')
+                ->setParameter('term', '%'.mb_strtolower(trim($term)).'%');
+        }
+
+        if (null !== $role) {
+            $qb->andWhere('u.role = :role')->setParameter('role', $role);
+        }
+
+        return $qb->getQuery()->getResult();
     }
 
     /** @return User[] */

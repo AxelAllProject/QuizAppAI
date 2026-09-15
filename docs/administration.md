@@ -9,9 +9,11 @@
 | **Administrateur** | compte + **clé administrateur** | tout ce qui précède + **modérer tous les quiz**, **générer et révoquer les clés**, **changer le rôle des comptes**, tableau de bord |
 
 Une clé n'est pas un compte : elle donne un rôle **au compte qui la saisit**. Plusieurs
-professeurs peuvent utiliser la même clé — chacun garde son propre compte, qui signe
-les quiz qu'il rédige. Une clé ne fait que **monter** en grade : un administrateur qui
-saisit une clé professeur reste administrateur.
+professeurs peuvent utiliser la même **clé professeur** — chacun garde son propre compte,
+qui signe les quiz qu'il rédige. Une **clé administrateur**, elle, ne sert **qu'une fois** :
+elle se lie au premier compte qui la saisit et passe à l'état « attribuée ». Un code admin
+qui circulerait ne ferait donc administrateur personne d'autre. Une clé ne fait que
+**monter** en grade : un administrateur qui saisit une clé professeur reste administrateur.
 
 ## Les clés en place
 
@@ -21,9 +23,11 @@ saisit une clé professeur reste administrateur.
 | **Professeur** | `6YW5-4X49-2FFX-NB5P` | Équipe pédagogique |
 
 Il existe en plus une **clé de secours** définie dans l'environnement
-(`ADMIN_CODE` dans `backend/.env.local`) : `XPYX-KDEU-2RLE-97PV`. Elle donne le rôle
-admin et ne peut pas être révoquée depuis l'interface — c'est le filet de sécurité
-si toutes les clés admin de la base venaient à être révoquées.
+(`ADMIN_CODE` dans `backend/.env.local`) : `XPYX-KDEU-2RLE-97PV`. Elle sert uniquement
+à créer le **premier** administrateur : dès qu'un compte admin existe, elle est refusée
+(les admins émettent ensuite des clés révocables depuis le back-office). Si plus aucun
+compte admin n'existe, elle refonctionne. La clé admin de la base ci-dessus est à usage
+unique : une fois saisie, il faut en générer une autre.
 
 > Ces clés sont des identifiants de **développement local**. Ne les recopie pas dans
 > un dépôt public : régénère-les avant toute mise en ligne.
@@ -43,20 +47,52 @@ Le rôle s'affiche sous le pseudo en haut à droite. Le menu **Créer** et le bo
 **En direct** apparaissent pour les professeurs et les admins ; **Administration**,
 pour les admins seulement.
 
+## Le back-office
+
+**Administration** ouvre un back-office à cinq sections, chacune sur sa propre
+adresse — on peut donc mettre une section en favori ou la recharger sans perdre sa place :
+
+| Section | Adresse | Ce qu'on y fait |
+|---|---|---|
+| **Vue d'ensemble** | `/admin` | chiffres de la plateforme, meilleurs joueurs, dernières parties |
+| **Comptes** | `/admin/comptes` | chercher un compte, filtrer par rôle, accorder ou retirer les droits |
+| **Clés d'accès** | `/admin/cles` | émettre, attribuer, filtrer et révoquer les clés prof / admin |
+| **Clés IA** | `/admin/cles-ia` | émettre, lier, filtrer et révoquer les clés de génération |
+| **Parties** | `/admin/parties` | classement complet et historique de toutes les parties |
+
+Les trois listings se filtrent **côté serveur** : la recherche et les filtres sont
+envoyés à l'API, qui ne renvoie que les lignes correspondantes. L'écran tient donc
+quand la base grossit, au lieu de charger toute la table pour la trier ensuite.
+
 ## Générer et révoquer des clés depuis l'interface (admin)
 
 **Administration → Clés d'accès** :
 
-- choisir **Clé professeur** ou **Clé administrateur** ;
-- soit **chercher un compte existant** par pseudo dans le champ dédié et cliquer
-  **Attribuer** : le rôle est accordé tout de suite à cette personne, sans code à
-  transmettre — la ligne affiche « Attribuée à … » ;
-- soit laisser ce champ vide, ajouter une étiquette (« Mme Martin », « Direction »…)
-  et cliquer **Générer une clé** : un code à transmettre à la personne, qui le saisit
-  elle-même (à l'inscription ou dans **Mon compte**) ;
-- **Copier** met un code généré dans le presse-papiers ;
-- **Révoquer** désactive un code généré : il ne peut plus être saisi. La ligne reste
-  visible, grisée, avec son nombre d'utilisations.
+- choisir **Professeur** ou **Administrateur** ;
+- soit **chercher un compte existant** par pseudo dans le champ **Attribuer à** et
+  cliquer **Attribuer le rôle** : le rôle est accordé tout de suite à cette personne,
+  sans code à transmettre — la ligne affiche « attribuée à … » ;
+- soit laisser ce champ vide, choisir une **expiration** (sans expiration, 1 / 7 / 30 /
+  90 jours, 1 an), ajouter une étiquette (« Mme Martin », « Direction »…) et cliquer
+  **Générer une clé** : le code s'affiche en clair juste au-dessus du tableau, prêt à
+  être copié, pour être transmis à la personne qui le saisira elle-même (à l'inscription
+  ou dans **Mon compte**) ;
+- **Révoquer** désactive un code : il ne peut plus être saisi. La ligne reste visible,
+  grisée, avec son nombre d'utilisations.
+
+**Expiration** : passée la date, le code cesse de conférer le rôle — exactement comme
+s'il était révoqué — et la ligne passe à l'état « périmée ». C'est ce qu'il faut pour un
+code distribué à l'oral en début d'année : il ne traîne pas indéfiniment. Les rôles
+**déjà accordés** par ce code ne sont pas repris pour autant.
+
+Chaque clé affiche un **état** unique, sur lequel on peut filtrer :
+
+| État | Ce que ça veut dire |
+|---|---|
+| **active** | utilisable : ni attribuée, ni périmée, ni révoquée |
+| **attribuée** | déjà donnée directement à un compte ; le code ne resservira pas |
+| **périmée** | la date d'expiration est passée |
+| **révoquée** | désactivée à la main par un administrateur |
 
 Révoquer une clé **ne retire pas** le rôle aux comptes qui l'ont déjà utilisée.
 Pour cela : **Administration → Comptes**, changer le rôle dans la liste. L'effet est
@@ -71,10 +107,11 @@ de générations (5 par défaut) et peut expirer ; elle se lie au **premier comp
 saisit et personne d'autre ne peut ensuite l'utiliser.
 
 **Administration → Clés IA** : choisir le nombre de générations et, si besoin, une
-expiration (en jours). Comme pour les clés d'accès, chercher un compte existant et cliquer
-**Attribuer** la lie tout de suite à cette personne ; sinon, ajouter une étiquette et
+expiration. Comme pour les clés d'accès, chercher un compte existant et cliquer
+**Lier la clé** la rattache tout de suite à cette personne ; sinon, ajouter une étiquette et
 cliquer **Générer une clé** produit un code que la personne saisit elle-même dans
-**Mon compte → Clé IA**. **Révoquer** coupe l'accès immédiatement, y compris pour les
+**Mon compte → Clé IA**. Le filtre d'état distingue les clés **actives**, **à distribuer**
+(émises mais liées à personne), **épuisées**, **périmées** et **révoquées**. **Révoquer** coupe l'accès immédiatement, y compris pour les
 générations déjà consommées ; ça n'efface pas l'historique.
 
 Supprimer le compte qui détenait une clé IA la libère (redevient saisissable par
@@ -88,6 +125,7 @@ cd backend
 php bin/console app:access-key --list                        # toutes les clés et leur état
 php bin/console app:access-key prof  --label="Mme Martin"    # nouvelle clé professeur
 php bin/console app:access-key admin --label="Direction"     # nouvelle clé administrateur
+php bin/console app:access-key prof  --expires=30            # clé professeur valable 30 jours
 
 php bin/console app:admin-key                                # régénère la clé de secours (.env.local)
 php bin/console app:admin-key --show                         # affiche la clé de secours
