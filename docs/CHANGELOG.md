@@ -3,6 +3,20 @@
 Une entrée par fonctionnalité : ce qui change, où, et comment le vérifier.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## 2026-09-16 — Environnement de développement Docker
+
+Lancer QuizLab sans installer PHP ni Node : `docker compose up --build`.
+
+- `backend/Dockerfile` : PHP 8.4 CLI + `intl`, `zip`, Composer ; `backend/docker/entrypoint.sh`
+  installe les dépendances si besoin et applique les migrations au démarrage.
+- `frontend/Dockerfile` : Node 24 Alpine, `npm ci` seulement si `package-lock.json` a changé, Vite sur `0.0.0.0`.
+- `compose.yaml` : les deux services ensemble (ports 8000 / 5173), code monté pour le
+  rechargement à chaud, `node_modules` et cache Composer en volumes.
+- `.dockerignore` : ni `vendor`, ni `node_modules`, ni `.env.local` dans les images.
+- Documentation : section « Avec Docker » du README et formation `docs/docker.md`.
+
+**Vérifier** : `docker compose up --build`, puis http://localhost:5173 et http://localhost:8000.
+
 ## 2026-09-15 — Audit sécurité et performances du backend (1re passe)
 
 Audit complet du backend (OWASP, injections SQL, contrôle d'accès, performances). Aucune

@@ -51,6 +51,7 @@ nouveaux défis, auteurs). Thème clair façon cahier, polices **Fredoka** /
 | **Lint** | oxlint | frontend |
 | **Tests** | PHPUnit 13 | `WebTestCase` (fonctionnel HTTP) / `KernelTestCase` (service) |
 | **CORS** | `nelmio/cors-bundle` | origines `localhost` / `127.0.0.1` en dev |
+| **Conteneurs** | Docker Compose | une image backend (PHP 8.4), une image frontend (Node 24), lancées ensemble |
 
 ## Architecture
 
@@ -124,6 +125,25 @@ npm run dev
 ```
 
 L'URL de l'API côté front se règle avec `VITE_API_URL` (défaut `http://localhost:8000`).
+
+### Avec Docker
+
+Sans PHP ni Node installés en local : chaque partie a sa **propre image**
+(`backend/Dockerfile`, `frontend/Dockerfile`) et `compose.yaml`, à la racine, les
+lance **ensemble** :
+
+```bash
+docker compose up --build        # frontend :5173, backend :8000
+docker compose exec backend php bin/console doctrine:fixtures:load   # jeu de démo (VIDE la base)
+docker compose down
+```
+
+Le code est monté dans les conteneurs (rechargement à chaud conservé). Au démarrage,
+le backend installe les dépendances Composer si besoin et applique les migrations ;
+la base SQLite reste dans `backend/var/`. `GROQ_API_KEY` se lit toujours dans
+`backend/.env.local`.
+
+📄 **Fonctionnement, commandes et dépannage : [docs/docker.md](docs/docker.md)**
 
 ## Rôles et connexion
 
@@ -285,7 +305,9 @@ Toutes les routes sauf `register`, `login` et `logout` demandent
 
 ```
 projet/
+├── compose.yaml             lance backend + frontend avec Docker
 ├── backend/                 Symfony 8 — API JSON
+│   ├── Dockerfile           image de dev PHP 8.4 (+ docker/entrypoint.sh)
 │   ├── src/
 │   │   ├── Identity/        comptes, auth, RGPD
 │   │   ├── Quiz/            rédaction des quiz, images
@@ -298,12 +320,14 @@ projet/
 │   ├── migrations/          schéma versionné (Doctrine Migrations)
 │   └── tests/               PHPUnit — API (WebTestCase) + tests unitaires rangés par contexte
 ├── frontend/                 React 19 + Vite
+│   ├── Dockerfile            image de dev Node 24
 │   └── src/
 │       ├── pages/            routes de l'app (Library, Editor, LiveHost…)
 │       │   └── admin/         back-office (vue d'ensemble, comptes, clés, parties)
 │       └── components/       widgets partagés (tableaux filtrables, chat IA, tuiles de jeu…)
 └── docs/
     ├── administration.md     rôles, clés d'accès, clés IA, RGPD
+    ├── docker.md             formation Docker : pourquoi, comment, commandes
     ├── fixtures.md           données de démo : comptes, clés, architecture
     └── CHANGELOG.md          une entrée par fonctionnalité
 ```
