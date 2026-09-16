@@ -2,6 +2,7 @@
 
 namespace App\Shared\Application;
 
+/** Génère les codes des clés d'accès et des clés IA. */
 class AdminKeyGenerator
 {
     /**

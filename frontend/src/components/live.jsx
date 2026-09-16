@@ -11,6 +11,7 @@ export const TILES = [
   { shape: '⬢', color: '#0a8585' },
 ]
 
+/** Intervalle entre deux lectures de l'état d'une partie en direct. */
 const POLL_MS = 1000
 
 /**
@@ -39,6 +40,7 @@ export function useLiveGame(pin) {
   useEffect(() => {
     if (finished) return undefined
 
+    /** Relit l'état de la partie. */
     const poll = () => track(api(`/api/live-games/${pin}`)).catch(setError)
     poll()
     const timer = setInterval(poll, POLL_MS)
@@ -68,6 +70,7 @@ export function useRemainingMs(game) {
   return Math.max(0, game.remainingMs - Math.max(0, now - game.receivedAt))
 }
 
+/** Chrono circulaire de la question en cours, en rouge sur les 5 dernières secondes. */
 export function Timer({ remainingMs, total }) {
   const seconds = Math.ceil(remainingMs / 1000)
 
@@ -83,6 +86,7 @@ export function Timer({ remainingMs, total }) {
   )
 }
 
+/** Tuile de réponse avec sa forme et sa couleur, cliquable ou non. */
 export function Tile({ index, className = '', onClick, disabled, children }) {
   const { shape, color } = TILES[index % TILES.length]
   const content = (
@@ -105,14 +109,17 @@ export function Tile({ index, className = '', onClick, disabled, children }) {
   )
 }
 
+/** Affiche un code PIN en deux groupes de trois chiffres. */
 export function formatPin(pin) {
   return `${pin.slice(0, 3)} ${pin.slice(3)}`
 }
 
+/** Écrit un rang en toutes lettres courtes (1er, 2e…). */
 export function ordinal(rank) {
   return rank === 1 ? '1er' : `${rank}e`
 }
 
+/** Podium des trois premiers joueurs. */
 export function Podium({ leaderboard }) {
   const [first, second, third] = leaderboard
   const steps = [
@@ -134,6 +141,7 @@ export function Podium({ leaderboard }) {
   )
 }
 
+/** Tableau du classement, avec les points de la dernière question si demandé. */
 export function LeaderboardTable({ rows, showLastPoints = false }) {
   return (
     <div style={{ overflowX: 'auto' }}>

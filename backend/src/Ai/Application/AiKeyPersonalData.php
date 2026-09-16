@@ -13,6 +13,7 @@ class AiKeyPersonalData implements PersonalDataEraser
     {
     }
 
+    /** Anonymise les clés IA créées ou saisies par le compte supprimé. */
     public function erase(User $user): void
     {
         $this->keys->anonymizeUser($user, self::ANONYMOUS);

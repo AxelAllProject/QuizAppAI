@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
+/** Participation d'un compte à une partie en direct : pseudo, score et réponses. */
 #[ORM\Entity]
 #[ORM\UniqueConstraint(columns: ['game_id', 'user_id'])]
 class LivePlayer
@@ -44,6 +45,7 @@ class LivePlayer
         $this->joinedAt = new \DateTimeImmutable();
     }
 
+    // Accesseurs : lecture et modification des champs de l'entité.
     public function getId(): ?int
     {
         return $this->id;
@@ -80,6 +82,7 @@ class LivePlayer
         return $this->answers;
     }
 
+    /** Ajoute une réponse du joueur. */
     public function addAnswer(LiveAnswer $answer): self
     {
         $this->answers->set($answer->getQuestionIndex(), $answer);
@@ -88,6 +91,7 @@ class LivePlayer
         return $this;
     }
 
+    /** Récupère la réponse du joueur à une question, ou null s'il n'a pas répondu. */
     public function answerFor(int $questionIndex): ?LiveAnswer
     {
         return $this->answers->get($questionIndex);

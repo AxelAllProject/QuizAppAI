@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Icon } from './Icon'
 
+/** Libellé affiché pour chaque rôle dans la liste des comptes. */
 const ROLE_LABELS = { user: 'joueur', prof: 'professeur', admin: 'administrateur' }
 
 /**

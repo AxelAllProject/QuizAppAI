@@ -4,6 +4,7 @@ namespace App\Live\UI\Http\Dto;
 
 use Symfony\Component\Validator\Constraints as Assert;
 
+/** Quiz choisi pour lancer une partie en direct. */
 class LiveGameInput
 {
     public function __construct(

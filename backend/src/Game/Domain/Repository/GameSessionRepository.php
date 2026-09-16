@@ -6,8 +6,10 @@ use App\Game\Domain\Model\GameSession;
 use App\Identity\Domain\Model\User;
 use App\Quiz\Domain\Model\Quiz;
 
+/** Accès aux parties solo enregistrées (implémenté avec Doctrine dans Infrastructure). */
 interface GameSessionRepository
 {
+    /** Récupère une partie par son identifiant, ou null si elle n'existe pas. */
     public function ofId(int $id): ?GameSession;
 
     /**
@@ -46,7 +48,9 @@ interface GameSessionRepository
     /** @return array{sessionCount: int, playerCount: int, score: int, total: int} */
     public function globalStats(): array;
 
+    /** Supprime toutes les parties d'un compte. */
     public function deleteByUser(User $user): void;
 
+    /** Prépare l'enregistrement d'une nouvelle partie (écrite au prochain flush). */
     public function add(GameSession $session): void;
 }

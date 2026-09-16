@@ -1,12 +1,16 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { api } from '../api'
+import { useAuth } from '../auth'
+import AiChatWidget from '../components/AiChatWidget'
 import ImageField from '../components/ImageField'
 import { ErrorBox, Field } from '../components/ui'
 import { Icon } from '../components/Icon'
 
+/** Durées de chrono proposées par question, en secondes. */
 const TIME_LIMITS = [5, 10, 20, 30, 60, 90, 120, 240]
 
+/** Crée une question vide avec deux propositions. */
 const emptyQuestion = () => ({
   key: crypto.randomUUID(),
   text: '',
@@ -17,10 +21,12 @@ const emptyQuestion = () => ({
   explanation: '',
 })
 
+/** Éditeur de quiz : création ou modification d'un quiz et de ses questions. */
 export default function Editor() {
   const { id } = useParams()
   const navigate = useNavigate()
   const editing = Boolean(id)
+  const { canCreate } = useAuth()
 
   const [form, setForm] = useState({
     title: '',
@@ -60,12 +66,14 @@ export default function Editor() {
       .catch(setError)
   }, [id, editing])
 
+  /** Modifie un ou plusieurs champs d'une question. */
   function updateQuestion(key, patch) {
     setQuestions((current) =>
       current.map((question) => (question.key === key ? { ...question, ...patch } : question)),
     )
   }
 
+  /** Modifie le texte d'une proposition. */
   function updateChoice(key, index, value) {
     setQuestions((current) =>
       current.map((question) =>
@@ -76,6 +84,7 @@ export default function Editor() {
     )
   }
 
+  /** Ajoute une proposition vide (6 au maximum). */
   function addChoice(key) {
     setQuestions((current) =>
       current.map((question) =>
@@ -86,6 +95,7 @@ export default function Editor() {
     )
   }
 
+  /** Retire une proposition (2 au minimum) en gardant la bonne réponse cohérente. */
   function removeChoice(key, index) {
     setQuestions((current) =>
       current.map((question) => {
@@ -105,6 +115,7 @@ export default function Editor() {
     )
   }
 
+  /** Déplace une question vers le haut ou vers le bas. */
   function moveQuestion(position, offset) {
     setQuestions((current) => {
       const next = [...current]
@@ -114,6 +125,7 @@ export default function Editor() {
     })
   }
 
+  /** Enregistre le quiz (création ou modification), puis ouvre la bibliothèque. */
   async function save(event) {
     event.preventDefault()
     setSaving(true)
@@ -145,194 +157,199 @@ export default function Editor() {
   }
 
   return (
-    <form className="page" onSubmit={save}>
-      <header className="page-head">
-        <div>
-          <h1>{editing ? 'Modifier le quiz' : 'Créer un quiz'}</h1>
-          <p>Ajoute tes questions et tes images, coche la bonne réponse, règle le chrono, et publie.</p>
-        </div>
-        <div className="row">
-          <button type="button" className="btn ghost" onClick={() => navigate(-1)}>
-            Annuler
-          </button>
-          <button className="btn primary" type="submit" disabled={saving}>
-            {saving ? 'Enregistrement…' : editing ? 'Enregistrer' : 'Publier le quiz'}
-          </button>
-        </div>
-      </header>
+    <>
+      <form className="page" onSubmit={save}>
+        <header className="page-head">
+          <div>
+            <h1>{editing ? 'Modifier le quiz' : 'Créer un quiz'}</h1>
+            <p>Ajoute tes questions et tes images, coche la bonne réponse, règle le chrono, et publie.</p>
+          </div>
+          <div className="row">
+            <button type="button" className="btn ghost" onClick={() => navigate(-1)}>
+              Annuler
+            </button>
+            <button className="btn primary" type="submit" disabled={saving}>
+              {saving ? 'Enregistrement…' : editing ? 'Enregistrer' : 'Publier le quiz'}
+            </button>
+          </div>
+        </header>
 
-      <ErrorBox error={error} />
+        <ErrorBox error={error} />
 
-      <div className="card stack" style={{ margin: '1rem 0 1.5rem' }}>
-        <Field label="Titre">
-          <input
-            value={form.title}
-            onChange={(e) => setForm({ ...form, title: e.target.value })}
-            placeholder="ex. Les capitales du monde"
-            maxLength={180}
-          />
-        </Field>
-
-        <Field label="Description" hint="Facultatif — une phrase pour situer le sujet.">
-          <textarea
-            value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
-            placeholder="De quoi parle ce quiz ?"
-          />
-        </Field>
-
-        <div className="form-grid">
-          <Field label="Catégorie">
+        <div className="card stack" style={{ margin: '1rem 0 1.5rem' }}>
+          <Field label="Titre">
             <input
-              value={form.category}
-              onChange={(e) => setForm({ ...form, category: e.target.value })}
-              placeholder="Général"
-              maxLength={60}
+              value={form.title}
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
+              placeholder="ex. Les capitales du monde"
+              maxLength={180}
             />
           </Field>
-          <Field label="Difficulté">
-            <select
-              value={form.difficulty}
-              onChange={(e) => setForm({ ...form, difficulty: e.target.value })}
-            >
-              <option value="facile">Facile</option>
-              <option value="moyen">Moyen</option>
-              <option value="difficile">Difficile</option>
-            </select>
+
+          <Field label="Description" hint="Facultatif — une phrase pour situer le sujet.">
+            <textarea
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              placeholder="De quoi parle ce quiz ?"
+            />
+          </Field>
+
+          <div className="form-grid">
+            <Field label="Catégorie">
+              <input
+                value={form.category}
+                onChange={(e) => setForm({ ...form, category: e.target.value })}
+                placeholder="Général"
+                maxLength={60}
+              />
+            </Field>
+            <Field label="Difficulté">
+              <select
+                value={form.difficulty}
+                onChange={(e) => setForm({ ...form, difficulty: e.target.value })}
+              >
+                <option value="facile">Facile</option>
+                <option value="moyen">Moyen</option>
+                <option value="difficile">Difficile</option>
+              </select>
+            </Field>
+          </div>
+
+          <Field label="Image de couverture" hint="Facultatif — affichée dans la bibliothèque et au lancement d’une partie en direct.">
+            <ImageField
+              value={form.coverImage}
+              onChange={(coverImage) => setForm((current) => ({ ...current, coverImage }))}
+              label="Ajouter une couverture"
+            />
           </Field>
         </div>
 
-        <Field label="Image de couverture" hint="Facultatif — affichée dans la bibliothèque et au lancement d’une partie en direct.">
-          <ImageField
-            value={form.coverImage}
-            onChange={(coverImage) => setForm((current) => ({ ...current, coverImage }))}
-            label="Ajouter une couverture"
-          />
-        </Field>
-      </div>
+        <div className="page-head" style={{ marginBottom: '1rem' }}>
+          <h2>
+            Questions <span className="badge accent">{questions.length}</span>
+          </h2>
+          <button type="button" className="btn sm" onClick={() => setQuestions([...questions, emptyQuestion()])}>
+            + Ajouter une question
+          </button>
+        </div>
 
-      <div className="page-head" style={{ marginBottom: '1rem' }}>
-        <h2>
-          Questions <span className="badge accent">{questions.length}</span>
-        </h2>
-        <button type="button" className="btn sm" onClick={() => setQuestions([...questions, emptyQuestion()])}>
-          + Ajouter une question
-        </button>
-      </div>
-
-      <div className="stack">
-        {questions.map((question, position) => (
-          <div className="question-editor" key={question.key}>
-            <header>
-              <span className="n">Question {position + 1}</span>
-              <span className="spacer" />
-              <button
-                type="button"
-                className="btn ghost sm"
-                onClick={() => moveQuestion(position, -1)}
-                disabled={position === 0}
-                aria-label="Monter la question"
-              >
-                ↑
-              </button>
-              <button
-                type="button"
-                className="btn ghost sm"
-                onClick={() => moveQuestion(position, 1)}
-                disabled={position === questions.length - 1}
-                aria-label="Descendre la question"
-              >
-                ↓
-              </button>
-              {questions.length > 1 && (
+        <div className="stack">
+          {questions.map((question, position) => (
+            <div className="question-editor" key={question.key}>
+              <header>
+                <span className="n">Question {position + 1}</span>
+                <span className="spacer" />
                 <button
                   type="button"
-                  className="btn danger sm"
-                  onClick={() => setQuestions(questions.filter((q) => q.key !== question.key))}
+                  className="btn ghost sm"
+                  onClick={() => moveQuestion(position, -1)}
+                  disabled={position === 0}
+                  aria-label="Monter la question"
                 >
-                  Retirer
+                  ↑
                 </button>
-              )}
-            </header>
+                <button
+                  type="button"
+                  className="btn ghost sm"
+                  onClick={() => moveQuestion(position, 1)}
+                  disabled={position === questions.length - 1}
+                  aria-label="Descendre la question"
+                >
+                  ↓
+                </button>
+                {questions.length > 1 && (
+                  <button
+                    type="button"
+                    className="btn danger sm"
+                    onClick={() => setQuestions(questions.filter((q) => q.key !== question.key))}
+                  >
+                    Retirer
+                  </button>
+                )}
+              </header>
 
-            <div className="stack">
-              <Field label="Intitulé">
-                <input
-                  value={question.text}
-                  onChange={(e) => updateQuestion(question.key, { text: e.target.value })}
-                  placeholder="Quelle est la capitale de l’Italie ?"
-                />
-              </Field>
-
-              <div className="form-grid">
-                <Field label="Illustration" hint="Facultatif — affichée au-dessus de la question.">
-                  <ImageField
-                    value={question.image}
-                    onChange={(image) => updateQuestion(question.key, { image })}
+              <div className="stack">
+                <Field label="Intitulé">
+                  <input
+                    value={question.text}
+                    onChange={(e) => updateQuestion(question.key, { text: e.target.value })}
+                    placeholder="Quelle est la capitale de l’Italie ?"
                   />
                 </Field>
-                <Field label="Chrono en partie en direct" hint="Répondre vite rapporte plus de points.">
-                  <select
-                    value={question.timeLimit}
-                    onChange={(e) => updateQuestion(question.key, { timeLimit: Number(e.target.value) })}
-                  >
-                    {TIME_LIMITS.map((seconds) => (
-                      <option key={seconds} value={seconds}>
-                        {seconds < 60 ? `${seconds} secondes` : `${seconds / 60} min`}
-                      </option>
+
+                <div className="form-grid">
+                  <Field label="Illustration" hint="Facultatif — affichée au-dessus de la question.">
+                    <ImageField
+                      value={question.image}
+                      onChange={(image) => updateQuestion(question.key, { image })}
+                    />
+                  </Field>
+                  <Field label="Chrono en partie en direct" hint="Répondre vite rapporte plus de points.">
+                    <select
+                      value={question.timeLimit}
+                      onChange={(e) => updateQuestion(question.key, { timeLimit: Number(e.target.value) })}
+                    >
+                      {TIME_LIMITS.map((seconds) => (
+                        <option key={seconds} value={seconds}>
+                          {seconds < 60 ? `${seconds} secondes` : `${seconds / 60} min`}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                </div>
+
+                <Field label="Réponses" hint="Coche la bonne réponse à gauche. De 2 à 6 propositions.">
+                  <div className="stack" style={{ gap: '0.5rem' }}>
+                    {question.choices.map((choice, choiceIndex) => (
+                      <div className="choice-row" key={choiceIndex}>
+                        <input
+                          type="radio"
+                          name={`correct-${question.key}`}
+                          checked={question.correctIndex === choiceIndex}
+                          onChange={() => updateQuestion(question.key, { correctIndex: choiceIndex })}
+                          aria-label={`Réponse ${choiceIndex + 1} correcte`}
+                        />
+                        <input
+                          value={choice}
+                          onChange={(e) => updateChoice(question.key, choiceIndex, e.target.value)}
+                          placeholder={`Proposition ${choiceIndex + 1}`}
+                        />
+                        {question.choices.length > 2 && (
+                          <button
+                            type="button"
+                            className="btn ghost sm remove"
+                            onClick={() => removeChoice(question.key, choiceIndex)}
+                            aria-label="Supprimer cette proposition"
+                          >
+                            <Icon name="x" size={16} />
+                          </button>
+                        )}
+                      </div>
                     ))}
-                  </select>
+                  </div>
+                </Field>
+
+                {question.choices.length < 6 && (
+                  <button type="button" className="btn ghost sm" onClick={() => addChoice(question.key)}>
+                    + Proposition
+                  </button>
+                )}
+
+                <Field label="Explication" hint="Facultatif — affichée dans la correction.">
+                  <input
+                    value={question.explanation}
+                    onChange={(e) => updateQuestion(question.key, { explanation: e.target.value })}
+                    placeholder="Pourquoi cette réponse ?"
+                  />
                 </Field>
               </div>
-
-              <Field label="Réponses" hint="Coche la bonne réponse à gauche. De 2 à 6 propositions.">
-                <div className="stack" style={{ gap: '0.5rem' }}>
-                  {question.choices.map((choice, choiceIndex) => (
-                    <div className="choice-row" key={choiceIndex}>
-                      <input
-                        type="radio"
-                        name={`correct-${question.key}`}
-                        checked={question.correctIndex === choiceIndex}
-                        onChange={() => updateQuestion(question.key, { correctIndex: choiceIndex })}
-                        aria-label={`Réponse ${choiceIndex + 1} correcte`}
-                      />
-                      <input
-                        value={choice}
-                        onChange={(e) => updateChoice(question.key, choiceIndex, e.target.value)}
-                        placeholder={`Proposition ${choiceIndex + 1}`}
-                      />
-                      {question.choices.length > 2 && (
-                        <button
-                          type="button"
-                          className="btn ghost sm remove"
-                          onClick={() => removeChoice(question.key, choiceIndex)}
-                          aria-label="Supprimer cette proposition"
-                        >
-                          <Icon name="x" size={16} />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </Field>
-
-              {question.choices.length < 6 && (
-                <button type="button" className="btn ghost sm" onClick={() => addChoice(question.key)}>
-                  + Proposition
-                </button>
-              )}
-
-              <Field label="Explication" hint="Facultatif — affichée dans la correction.">
-                <input
-                  value={question.explanation}
-                  onChange={(e) => updateQuestion(question.key, { explanation: e.target.value })}
-                  placeholder="Pourquoi cette réponse ?"
-                />
-              </Field>
             </div>
-          </div>
-        ))}
-      </div>
-    </form>
+          ))}
+        </div>
+      </form>
+
+      {/* Génération par IA : seulement pour créer un quiz, et réservée aux professeurs et administrateurs. */}
+      {!editing && canCreate && <AiChatWidget />}
+    </>
   )
 }

@@ -16,5 +16,6 @@ interface PersonalDataEraser
     /** Pseudo affiché à la place d'un compte supprimé. */
     public const ANONYMOUS = 'compte supprimé';
 
+    /** Efface ou anonymise les données de ce contexte liées au compte. */
     public function erase(User $user): void;
 }

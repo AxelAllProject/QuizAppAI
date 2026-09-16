@@ -22,6 +22,7 @@ class RedeemAiKeyController extends AbstractController
     ) {
     }
 
+    /** Lie la clé IA saisie au compte connecté, puis renvoie le compte mis à jour. */
     #[Route('/api/me/ai-key', name: 'api_me_ai_key', methods: ['POST'])]
     public function __invoke(#[MapRequestPayload] RedeemAiKeyInput $input, #[CurrentUser] User $user): JsonResponse
     {

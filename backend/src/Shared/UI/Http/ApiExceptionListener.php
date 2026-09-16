@@ -16,6 +16,7 @@ use Symfony\Component\Validator\Exception\ValidationFailedException;
 #[AsEventListener(event: ExceptionEvent::class)]
 class ApiExceptionListener
 {
+    /** Transforme toute exception levée sous /api en réponse JSON. */
     public function __invoke(ExceptionEvent $event): void
     {
         if (!str_starts_with($event->getRequest()->getPathInfo(), '/api')) {

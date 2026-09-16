@@ -64,6 +64,7 @@ class LiveGame
         $this->createdAt = new \DateTimeImmutable();
     }
 
+    // Accesseurs : lecture et modification des champs de l'entité.
     public function getId(): ?int
     {
         return $this->id;
@@ -89,6 +90,7 @@ class LiveGame
         return $this->status;
     }
 
+    /** Indique si la partie est terminée. */
     public function isFinished(): bool
     {
         return self::STATUS_FINISHED === $this->status;
@@ -104,6 +106,7 @@ class LiveGame
         return null === $this->questionStartedAtMs ? null : (int) $this->questionStartedAtMs;
     }
 
+    /** Passe à la question demandée et démarre son chrono. */
     public function startQuestion(int $index, int $nowMs): self
     {
         $this->status = self::STATUS_QUESTION;
@@ -113,6 +116,7 @@ class LiveGame
         return $this;
     }
 
+    /** Clôt la question en cours et affiche la correction. */
     public function reveal(): self
     {
         $this->status = self::STATUS_REVEAL;
@@ -120,6 +124,7 @@ class LiveGame
         return $this;
     }
 
+    /** Termine la partie à la date donnée. */
     public function finish(\DateTimeImmutable $at): self
     {
         $this->status = self::STATUS_FINISHED;
@@ -144,6 +149,7 @@ class LiveGame
         return $this->players;
     }
 
+    /** Ajoute un joueur à la partie. */
     public function addPlayer(LivePlayer $player): self
     {
         if (!$this->players->contains($player)) {
@@ -153,6 +159,7 @@ class LiveGame
         return $this;
     }
 
+    /** Retire un joueur de la partie. */
     public function removePlayer(LivePlayer $player): self
     {
         $this->players->removeElement($player);

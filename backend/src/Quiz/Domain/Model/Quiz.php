@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
+/** Quiz de la bibliothèque, avec ses questions ordonnées. */
 #[ORM\Entity]
 class Quiz
 {
@@ -55,6 +56,7 @@ class Quiz
         $this->createdAt = new \DateTimeImmutable();
     }
 
+    // Accesseurs : lecture et modification des champs de l'entité.
     public function getId(): ?int
     {
         return $this->id;
@@ -155,6 +157,7 @@ class Quiz
         return $this->questions;
     }
 
+    /** Ajoute une question au quiz (sans doublon). */
     public function addQuestion(Question $question): self
     {
         if (!$this->questions->contains($question)) {
@@ -165,6 +168,7 @@ class Quiz
         return $this;
     }
 
+    /** Retire toutes les questions du quiz (elles sont supprimées au prochain flush). */
     public function clearQuestions(): self
     {
         foreach ($this->questions as $question) {

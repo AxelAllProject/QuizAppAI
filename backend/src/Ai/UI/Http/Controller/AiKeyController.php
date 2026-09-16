@@ -27,6 +27,7 @@ class AiKeyController extends AbstractController
     ) {
     }
 
+    /** Liste les clés IA, filtrées en base par recherche et par état. */
     #[Route('', name: 'api_ai_key_list', methods: ['GET'])]
     public function list(#[MapQueryString] AiKeyFilter $filter = new AiKeyFilter()): JsonResponse
     {

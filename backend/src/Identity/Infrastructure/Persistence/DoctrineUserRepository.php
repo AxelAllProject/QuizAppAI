@@ -17,16 +17,19 @@ class DoctrineUserRepository extends ServiceEntityRepository implements UserRepo
         parent::__construct($registry, User::class);
     }
 
+    /** Récupère un compte par son identifiant. */
     public function ofId(int $id): ?User
     {
         return $this->find($id);
     }
 
+    /** Récupère un compte par son adresse e-mail normalisée. */
     public function findOneByEmail(string $email): ?User
     {
         return $this->findOneBy(['email' => mb_strtolower(trim($email))]);
     }
 
+    /** Indique s'il existe déjà au moins un administrateur. */
     public function hasAdmin(): bool
     {
         return $this->count(['role' => User::ROLE_ADMIN]) > 0;
@@ -77,11 +80,13 @@ class DoctrineUserRepository extends ServiceEntityRepository implements UserRepo
             ->getResult();
     }
 
+    /** Prépare l'enregistrement d'un nouveau compte. */
     public function add(User $user): void
     {
         $this->getEntityManager()->persist($user);
     }
 
+    /** Prépare la suppression d'un compte. */
     public function remove(User $user): void
     {
         $this->getEntityManager()->remove($user);

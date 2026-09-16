@@ -12,6 +12,7 @@ import {
 } from '../../components/admin'
 import { ErrorBox, formatDate } from '../../components/ui'
 
+/** Options du filtre par rôle. */
 const ROLES = [
   ['', 'Tous les rôles'],
   ['user', 'Joueur'],
@@ -19,6 +20,7 @@ const ROLES = [
   ['admin', 'Administrateur'],
 ]
 
+/** Filtres vides (tout afficher). */
 const EMPTY = { search: '', role: '' }
 
 /** Annuaire des comptes : on y cherche quelqu'un, et on lui change son rôle. */
@@ -27,10 +29,12 @@ export default function Accounts() {
   const [filters, setFilters] = useState(EMPTY)
   const { rows, loading, error, setError, replace } = useFilteredList('/api/users', filters)
 
+  /** Modifie un filtre de l'annuaire. */
   function set(field, value) {
     setFilters((current) => ({ ...current, [field]: value }))
   }
 
+  /** Change le rôle d'un compte et met à jour sa ligne. */
   async function changeRole(account, role) {
     setError(null)
 

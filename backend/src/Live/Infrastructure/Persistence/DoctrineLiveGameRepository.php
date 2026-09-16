@@ -63,6 +63,7 @@ class DoctrineLiveGameRepository extends ServiceEntityRepository implements Live
         return $game;
     }
 
+    /** Indique si le code PIN est déjà pris par une partie non terminée. */
     public function isPinInUse(string $pin): bool
     {
         return (bool) $this->createQueryBuilder('g')
@@ -118,17 +119,20 @@ class DoctrineLiveGameRepository extends ServiceEntityRepository implements Live
         }
     }
 
+    /** Supprime toutes les parties jouées sur un quiz. */
     public function removeForQuiz(Quiz $quiz): void
     {
         $this->removeAll($this->findBy(['quiz' => $quiz]));
     }
 
+    /** Retire le joueur de sa partie et le supprime avec ses réponses. */
     public function removePlayer(LivePlayer $player): void
     {
         $player->getGame()->removePlayer($player);
         $this->getEntityManager()->remove($player);
     }
 
+    /** Prépare l'enregistrement d'une nouvelle partie. */
     public function add(LiveGame $liveGame): void
     {
         $this->getEntityManager()->persist($liveGame);

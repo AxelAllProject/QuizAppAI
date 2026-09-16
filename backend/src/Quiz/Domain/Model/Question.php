@@ -4,6 +4,7 @@ namespace App\Quiz\Domain\Model;
 
 use Doctrine\ORM\Mapping as ORM;
 
+/** Question d'un quiz : intitulé, propositions, bonne réponse, chrono et illustration. */
 #[ORM\Entity]
 class Question
 {
@@ -40,6 +41,7 @@ class Question
     #[ORM\Column(options: ['default' => 20])]
     private int $timeLimit = 20;
 
+    // Accesseurs : lecture et modification des champs de l'entité.
     public function getId(): ?int
     {
         return $this->id;

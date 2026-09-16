@@ -5,12 +5,14 @@ namespace App\Ai\UI\Http;
 use App\Ai\Domain\Model\AiKey;
 use Psr\Clock\ClockInterface;
 
+/** Transforme une clé IA en tableau JSON pour le back-office. */
 class AiKeyNormalizer
 {
     public function __construct(private readonly ClockInterface $clock)
     {
     }
 
+    /** Renvoie les champs affichés d'une clé IA, avec son état calculé à l'instant présent. */
     public function normalize(AiKey $key): array
     {
         $expired = $key->isExpired($this->clock->now());

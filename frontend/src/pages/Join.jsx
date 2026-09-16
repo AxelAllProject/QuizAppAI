@@ -2,6 +2,7 @@ import { useSearchParams } from 'react-router-dom'
 import JoinForm from '../components/JoinForm'
 import { Icon } from '../components/Icon'
 
+/** Page pour rejoindre une partie en direct avec son code PIN. */
 export default function Join() {
   const [params] = useSearchParams()
 

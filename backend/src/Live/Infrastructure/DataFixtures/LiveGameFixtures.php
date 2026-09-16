@@ -30,12 +30,14 @@ class LiveGameFixtures extends Fixture implements DependentFixtureInterface, Fix
     ) {
     }
 
+    /** Crée une partie terminée et une partie en salle d'attente. */
     public function load(ObjectManager $manager): void
     {
         $this->playFinishedGame();
         $this->openLobby();
     }
 
+    /** Joue une partie complète, question par question, jusqu'au podium. */
     private function playFinishedGame(): void
     {
         $game = $this->createLiveGame->create($this->quiz('culture'), $this->user('mme.martin'));
@@ -61,6 +63,7 @@ class LiveGameFixtures extends Fixture implements DependentFixtureInterface, Fix
         }
     }
 
+    /** Ouvre une partie que des joueurs ont rejointe mais qui n'a pas commencé. */
     private function openLobby(): void
     {
         $game = $this->createLiveGame->create($this->quiz('web'), $this->user('m.durand'));
@@ -70,21 +73,25 @@ class LiveGameFixtures extends Fixture implements DependentFixtureInterface, Fix
         }
     }
 
+    /** Récupère un quiz de démonstration par son nom court. */
     private function quiz(string $slug): Quiz
     {
         return $this->getReference(QuizFixtures::ref($slug), Quiz::class);
     }
 
+    /** Récupère un compte de démonstration par son pseudo. */
     private function user(string $username): User
     {
         return $this->getReference(UserFixtures::ref($username), User::class);
     }
 
+    /** Fixtures à charger avant celles-ci. */
     public function getDependencies(): array
     {
         return [UserFixtures::class, QuizFixtures::class];
     }
 
+    /** Groupes permettant de charger ces fixtures seules (--group=live-games). */
     public static function getGroups(): array
     {
         return ['demo', 'live-games'];

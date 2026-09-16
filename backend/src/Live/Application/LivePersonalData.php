@@ -18,6 +18,7 @@ class LivePersonalData implements PersonalDataExporter, PersonalDataEraser
     {
     }
 
+    /** Exporte les participations du compte aux parties en direct, avec ses réponses. */
     public function export(User $user): array
     {
         return ['liveGames' => array_map(static fn (LivePlayer $player) => [
@@ -36,6 +37,7 @@ class LivePersonalData implements PersonalDataExporter, PersonalDataEraser
         ], $this->liveGames->findParticipations($user))];
     }
 
+    /** Supprime les parties animées par le compte et ses participations aux autres. */
     public function erase(User $user): void
     {
         $this->liveGames->removeAll($this->liveGames->findByHost($user));

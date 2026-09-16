@@ -5,6 +5,7 @@ namespace App\Quiz\Application\Dto;
 use App\Quiz\Domain\Model\QuizImage;
 use Symfony\Component\Validator\Constraints as Assert;
 
+/** Quiz saisi dans l'éditeur (ou généré par l'IA), avec ses règles de validation. */
 class QuizInput
 {
     public function __construct(

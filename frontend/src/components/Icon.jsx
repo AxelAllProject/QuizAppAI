@@ -5,6 +5,7 @@
  */
 const dot = (cx, cy, r = 1) => <circle cx={cx} cy={cy} r={r} fill="currentColor" stroke="none" />
 
+/** Tracés SVG de chaque icône, par nom. */
 const ICONS = {
   // Interface
   x: <path d="M18 6 6 18M6 6l12 12" />,
@@ -143,6 +144,7 @@ const ICONS = {
   ),
 }
 
+/** Affiche l'icône demandée par son nom, à la taille voulue. */
 export function Icon({ name, size = 18, strokeWidth = 2, className = '', ...rest }) {
   return (
     <svg
@@ -164,6 +166,7 @@ export function Icon({ name, size = 18, strokeWidth = 2, className = '', ...rest
   )
 }
 
+/** Couleurs (clair, foncé) des médailles or, argent et bronze. */
 const MEDAL_COLORS = {
   1: ['#f5b921', '#b97f00'],
   2: ['#c6cdd9', '#7d8697'],

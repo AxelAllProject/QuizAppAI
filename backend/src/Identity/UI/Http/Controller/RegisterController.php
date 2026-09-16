@@ -16,6 +16,7 @@ use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Attribute\Route;
 
+/** Route d'inscription. */
 class RegisterController extends AbstractController
 {
     use ThrottlesRequests;

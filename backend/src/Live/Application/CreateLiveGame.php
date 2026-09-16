@@ -19,6 +19,7 @@ class CreateLiveGame
     ) {
     }
 
+    /** Tire un code PIN libre sous verrou, puis enregistre la partie en salle d'attente. */
     public function create(Quiz $quiz, User $host): LiveGame
     {
         // Un PIN peut resservir une fois sa partie terminée, donc pas de contrainte d'unicité en base :

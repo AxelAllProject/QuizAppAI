@@ -31,6 +31,7 @@ class UserController extends AbstractController
     ) {
     }
 
+    /** Liste les comptes filtrés, avec leurs statistiques de jeu calculées en base. */
     #[Route('', name: 'api_user_list', methods: ['GET'])]
     public function list(#[MapQueryString] UserFilter $filter = new UserFilter()): JsonResponse
     {

@@ -15,6 +15,7 @@ export default function LivePlayer() {
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState(null)
 
+  /** Envoie une action du joueur (rejoindre, répondre) et affiche l'erreur éventuelle. */
   async function run(method, path, body) {
     setBusy(true)
     setActionError(null)

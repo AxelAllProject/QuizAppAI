@@ -5,6 +5,7 @@ namespace App\Identity\UI\Http\Dto;
 use App\Identity\Domain\Model\User;
 use Symfony\Component\Validator\Constraints as Assert;
 
+/** Nouveau rôle choisi par un admin pour un compte. */
 class RoleInput
 {
     public function __construct(

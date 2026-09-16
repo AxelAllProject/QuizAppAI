@@ -64,6 +64,7 @@ export function useFilteredList(path, filters, { delay = 250 } = {}) {
   return { rows, loading, error, setError, replace, reload }
 }
 
+/** Barre de filtres d'un tableau, avec le nombre de résultats. */
 export function Toolbar({ children, count, total }) {
   return (
     <div className="toolbar">
@@ -78,6 +79,7 @@ export function Toolbar({ children, count, total }) {
   )
 }
 
+/** Champ de recherche avec son icône. */
 export function SearchInput({ value, onChange, placeholder = 'Rechercher…' }) {
   return (
     <div className="search-input">
@@ -103,6 +105,7 @@ export function FilterSelect({ label, value, onChange, options }) {
   )
 }
 
+/** Bouton qui remet les filtres à zéro, affiché seulement si un filtre est actif. */
 export function ResetFilters({ active, onReset }) {
   if (!active) return null
 
@@ -152,6 +155,7 @@ export function DataTable({ columns, rows, loading, empty, rowKey = (row) => row
   )
 }
 
+/** Lignes grisées affichées pendant le chargement d'un tableau. */
 function TableSkeleton({ columns }) {
   return (
     <div className="table-wrap">
@@ -172,6 +176,7 @@ function TableSkeleton({ columns }) {
   )
 }
 
+/** Couleur du badge selon l'état d'une clé. */
 const STATUS_TONES = {
   active: 'ok',
   assigned: 'info',
@@ -181,6 +186,7 @@ const STATUS_TONES = {
   revoked: 'off',
 }
 
+/** Libellé du badge selon l'état d'une clé. */
 const STATUS_LABELS = {
   active: 'active',
   assigned: 'attribuée',
@@ -190,6 +196,7 @@ const STATUS_LABELS = {
   revoked: 'révoquée',
 }
 
+/** Badge coloré indiquant l'état d'une clé. */
 export function StatusBadge({ status }) {
   return <span className={`status status-${STATUS_TONES[status] ?? 'off'}`}>{STATUS_LABELS[status] ?? status}</span>
 }
@@ -204,6 +211,7 @@ export function CopyButton({ value, label = 'Copier' }) {
     return () => clearTimeout(timer)
   }, [copied])
 
+  /** Copie la valeur dans le presse-papiers et affiche une confirmation. */
   async function copy() {
     try {
       await navigator.clipboard.writeText(value)
@@ -220,6 +228,7 @@ export function CopyButton({ value, label = 'Copier' }) {
   )
 }
 
+/** Affiche un code de clé en police à chasse fixe. */
 export function KeyValue({ value }) {
   return <code className="key-value">{value}</code>
 }
@@ -259,6 +268,7 @@ export function SectionHead({ title, children, action }) {
   )
 }
 
+/** Formate une date par rapport à aujourd'hui (hier, demain, dans 3 jours…). */
 export function relativeDate(iso) {
   if (!iso) return '—'
 

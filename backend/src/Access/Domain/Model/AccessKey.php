@@ -69,6 +69,7 @@ class AccessKey
         $this->createdAt = new \DateTimeImmutable();
     }
 
+    // Accesseurs : lecture et modification des champs de l'entité.
     public function getId(): ?int
     {
         return $this->id;
@@ -132,6 +133,7 @@ class AccessKey
         return $this->revokedAt;
     }
 
+    /** Indique si la clé n'a pas été révoquée. */
     public function isActive(): bool
     {
         return null === $this->revokedAt;
@@ -149,6 +151,7 @@ class AccessKey
         return $this;
     }
 
+    /** Indique si la date d'expiration est dépassée à l'instant donné. */
     public function isExpired(\DateTimeImmutable $now): bool
     {
         return null !== $this->expiresAt && $this->expiresAt <= $now;
@@ -174,6 +177,7 @@ class AccessKey
         };
     }
 
+    /** Révoque la clé : elle ne donne plus aucun droit (la première date de révocation est conservée). */
     public function revoke(): self
     {
         $this->revokedAt ??= new \DateTimeImmutable();
@@ -191,6 +195,7 @@ class AccessKey
         return $this->usageCount;
     }
 
+    /** Compte une utilisation de la clé et note sa date. */
     public function markUsed(): self
     {
         $this->lastUsedAt = new \DateTimeImmutable();

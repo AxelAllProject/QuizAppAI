@@ -19,6 +19,7 @@ class QuizPersonalData implements PersonalDataExporter, PersonalDataEraser
     ) {
     }
 
+    /** Exporte les quiz rédigés par le compte, avec leurs réponses. */
     public function export(User $user): array
     {
         return ['quizzes' => array_map(
@@ -27,6 +28,7 @@ class QuizPersonalData implements PersonalDataExporter, PersonalDataEraser
         )];
     }
 
+    /** Retire le propriétaire des quiz du compte supprimé et anonymise l'auteur affiché. */
     public function erase(User $user): void
     {
         $this->quizzes->anonymizeOwner($user, self::ANONYMOUS);

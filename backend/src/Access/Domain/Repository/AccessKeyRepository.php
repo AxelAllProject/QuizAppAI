@@ -5,10 +5,13 @@ namespace App\Access\Domain\Repository;
 use App\Access\Domain\Model\AccessKey;
 use App\Identity\Domain\Model\User;
 
+/** Accès aux clés d'accès enregistrées (implémenté avec Doctrine dans Infrastructure). */
 interface AccessKeyRepository
 {
+    /** Récupère une clé par son identifiant, ou null si elle n'existe pas. */
     public function ofId(int $id): ?AccessKey;
 
+    /** Récupère une clé par son code (XXXX-XXXX-XXXX-XXXX), quel que soit son état. */
     public function ofValue(string $value): ?AccessKey;
 
     /** Une clé révoquée — ou périmée — ne donne plus aucun droit. */
@@ -33,5 +36,6 @@ interface AccessKeyRepository
     /** Efface le compte des clés qu'il a créées ou reçues, en gardant la trace de leur usage. */
     public function anonymizeUser(User $user, string $anonymous): void;
 
+    /** Prépare l'enregistrement d'une nouvelle clé (écrite au prochain flush). */
     public function add(AccessKey $key): void;
 }

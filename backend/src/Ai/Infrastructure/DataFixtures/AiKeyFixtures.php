@@ -16,6 +16,7 @@ class AiKeyFixtures extends Fixture implements DependentFixtureInterface, Fixtur
     /** Clé libre, à saisir dans « Mon compte → Clé IA » pour tester la génération. */
     public const FREE_KEY = 'DEMO-AIKY-FREE-2026';
 
+    /** Enregistre les clés IA de démonstration. */
     public function load(ObjectManager $manager): void
     {
         $martin = $this->getReference(UserFixtures::ref('mme.martin'), User::class);
@@ -42,16 +43,19 @@ class AiKeyFixtures extends Fixture implements DependentFixtureInterface, Fixtur
         $manager->flush();
     }
 
+    /** Construit une clé IA de démonstration avec son code, son quota et son étiquette. */
     private function key(string $value, int $generations, string $label): AiKey
     {
         return (new AiKey($value, $generations))->setLabel($label)->setCreatedBy('fixtures');
     }
 
+    /** Fixtures à charger avant celles-ci. */
     public function getDependencies(): array
     {
         return [UserFixtures::class];
     }
 
+    /** Groupes permettant de charger ces fixtures seules (--group=ai-keys). */
     public static function getGroups(): array
     {
         return ['demo', 'ai-keys'];

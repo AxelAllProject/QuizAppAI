@@ -12,6 +12,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Validator\Constraints as Assert;
 
+/** Route de téléversement des images de quiz. */
 class UploadController extends AbstractController
 {
     public function __construct(private readonly ImageUploader $uploader)

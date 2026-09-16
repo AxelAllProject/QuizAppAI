@@ -22,11 +22,13 @@ class DoctrineAccessKeyRepository extends ServiceEntityRepository implements Acc
         parent::__construct($registry, AccessKey::class);
     }
 
+    /** Récupère une clé par son identifiant. */
     public function ofId(int $id): ?AccessKey
     {
         return $this->find($id);
     }
 
+    /** Récupère une clé par son code. */
     public function ofValue(string $value): ?AccessKey
     {
         return $this->findOneBy(['value' => $value]);
@@ -95,6 +97,7 @@ class DoctrineAccessKeyRepository extends ServiceEntityRepository implements Acc
         return $qb->getQuery()->getResult();
     }
 
+    /** Ajoute à la requête le filtre correspondant à l'état demandé (active, attribuée, périmée, révoquée). */
     private function applyStatus(QueryBuilder $qb, ?string $status): void
     {
         if (null === $status) {
@@ -119,6 +122,7 @@ class DoctrineAccessKeyRepository extends ServiceEntityRepository implements Acc
         };
     }
 
+    /** Remplace le pseudo du compte supprimé sur les clés qu'il a créées, et le détache des clés qui lui ont été attribuées. */
     public function anonymizeUser(User $user, string $anonymous): void
     {
         $this->createQueryBuilder('k')
@@ -142,6 +146,7 @@ class DoctrineAccessKeyRepository extends ServiceEntityRepository implements Acc
             ->execute();
     }
 
+    /** Prépare l'enregistrement d'une nouvelle clé. */
     public function add(AccessKey $accessKey): void
     {
         $this->getEntityManager()->persist($accessKey);

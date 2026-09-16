@@ -14,11 +14,13 @@ class LiveGamePurger
     ) {
     }
 
+    /** Compte les parties créées avant la date limite. */
     public function countCreatedBefore(\DateTimeImmutable $limit): int
     {
         return count($this->games->findCreatedBefore($limit));
     }
 
+    /** Supprime les parties créées avant la date limite et renvoie leur nombre. */
     public function purgeCreatedBefore(\DateTimeImmutable $limit): int
     {
         $games = $this->games->findCreatedBefore($limit);

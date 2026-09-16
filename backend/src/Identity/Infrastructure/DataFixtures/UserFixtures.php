@@ -30,16 +30,19 @@ class UserFixtures extends Fixture implements FixtureGroupInterface
     {
     }
 
+    /** Nom de référence d'un compte, pour le retrouver dans les autres fixtures. */
     public static function ref(string $username): string
     {
         return 'user.'.$username;
     }
 
+    /** Adresse e-mail d'un compte de démonstration. */
     public static function email(string $username): string
     {
         return $username.'@quizlab.test';
     }
 
+    /** Crée les comptes de démonstration avec leur rôle. */
     public function load(ObjectManager $manager): void
     {
         foreach (self::ACCOUNTS as $username => $role) {
@@ -57,6 +60,7 @@ class UserFixtures extends Fixture implements FixtureGroupInterface
         $manager->flush();
     }
 
+    /** Groupes permettant de charger ces fixtures seules (--group=accounts). */
     public static function getGroups(): array
     {
         return ['demo', 'accounts'];

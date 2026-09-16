@@ -58,6 +58,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->lastSeenAt = $this->createdAt;
     }
 
+    // Accesseurs : lecture et modification des champs de l'entité.
     public function getId(): ?int
     {
         return $this->id;
@@ -145,6 +146,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->lastSeenAt;
     }
 
+    /** Note la date de dernière visite (sert à la purge des comptes inactifs). */
     public function touch(): self
     {
         $this->lastSeenAt = new \DateTimeImmutable();
@@ -162,6 +164,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->consentVersion;
     }
 
+    /** Enregistre la date et la version de la politique de confidentialité acceptée. */
     public function acceptPrivacyPolicy(string $version = self::PRIVACY_POLICY_VERSION): self
     {
         $this->consentedAt = new \DateTimeImmutable();

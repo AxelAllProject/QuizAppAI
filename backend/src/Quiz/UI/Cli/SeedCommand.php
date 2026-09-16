@@ -10,6 +10,7 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
+/** Commande console qui ajoute des quiz de démonstration sans vider la base. */
 #[AsCommand(name: 'app:seed', description: 'Charge quelques quiz de démonstration')]
 class SeedCommand
 {
@@ -19,6 +20,7 @@ class SeedCommand
     ) {
     }
 
+    /** Ajoute chaque quiz de démonstration qui n'existe pas encore. */
     public function __invoke(SymfonyStyle $io): int
     {
         foreach ($this->demoQuizzes() as $data) {
@@ -55,6 +57,7 @@ class SeedCommand
         return Command::SUCCESS;
     }
 
+    /** Données des quiz de démonstration. */
     private function demoQuizzes(): array
     {
         return [

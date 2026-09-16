@@ -6,6 +6,7 @@ use App\Quiz\Domain\Model\QuizImage;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
+/** Question saisie dans l'éditeur (ou générée par l'IA), avec ses règles de validation. */
 class QuestionInput
 {
     public function __construct(
@@ -29,6 +30,7 @@ class QuestionInput
     ) {
     }
 
+    /** Vérifie que la bonne réponse désigne bien une des propositions. */
     #[Assert\Callback]
     public function validateCorrectIndex(ExecutionContextInterface $context): void
     {

@@ -6,6 +6,7 @@ use App\Identity\Domain\Model\User;
 use App\Quiz\Domain\Model\Quiz;
 use Doctrine\ORM\Mapping as ORM;
 
+/** Partie solo terminée : score, durée et correction de chaque question. */
 #[ORM\Entity]
 class GameSession
 {
@@ -51,6 +52,7 @@ class GameSession
         $this->playedAt = new \DateTimeImmutable();
     }
 
+    // Accesseurs : lecture et modification des champs de l'entité.
     public function getId(): ?int
     {
         return $this->id;

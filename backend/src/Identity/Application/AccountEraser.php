@@ -27,6 +27,7 @@ class AccountEraser
     ) {
     }
 
+    /** Supprime le compte et, dans la même transaction, tout ce que chaque contexte détient sur lui. */
     public function erase(User $user): void
     {
         $this->unitOfWork->transactional(function () use ($user): void {

@@ -2,6 +2,7 @@
 
 namespace App\Game\UI\Http\Dto;
 
+/** Paramètres de l'historique des parties (?all=1). */
 class HistoryFilter
 {
     public function __construct(

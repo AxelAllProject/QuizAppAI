@@ -17,14 +17,17 @@ import {
 import UserPicker from '../../components/UserPicker'
 import { ErrorBox, Field, formatDate } from '../../components/ui'
 
+/** Libellé affiché pour chaque rôle. */
 const ROLE_LABELS = { prof: 'professeur', admin: 'administrateur' }
 
+/** Options du filtre par rôle. */
 const ROLE_FILTERS = [
   ['', 'Tous les rôles'],
   ['prof', 'Professeur'],
   ['admin', 'Administrateur'],
 ]
 
+/** Options du filtre par état. */
 const STATUS_FILTERS = [
   ['', 'Tous les états'],
   ['active', 'Active'],
@@ -43,6 +46,7 @@ const DURATIONS = [
   ['365', '1 an'],
 ]
 
+/** Filtres vides (tout afficher). */
 const EMPTY = { search: '', role: '', status: '' }
 
 /** Émission, attribution et révocation des clés qui confèrent un rôle. */
@@ -63,6 +67,7 @@ export default function AccessKeysPage() {
   const [busy, setBusy] = useState(false)
   const [created, setCreated] = useState(null)
 
+  /** Crée une clé d'accès (ou l'attribue à un compte) et l'affiche en tête. */
   async function create(event) {
     event.preventDefault()
     setBusy(true)
@@ -93,6 +98,7 @@ export default function AccessKeysPage() {
     }
   }
 
+  /** Révoque une clé après confirmation. */
   async function revoke(key) {
     if (!confirm(`Révoquer la clé ${key.value} ? Elle ne donnera plus aucun rôle.`)) return
 

@@ -23,6 +23,7 @@ class RedeemAccessKeyController extends AbstractController
     ) {
     }
 
+    /** Applique la clé saisie au compte connecté, puis renvoie le compte mis à jour. */
     #[Route('/api/me/access-key', name: 'api_me_access_key', methods: ['POST'])]
     public function __invoke(#[MapRequestPayload] RedeemKeyInput $input, #[CurrentUser] User $user): JsonResponse
     {

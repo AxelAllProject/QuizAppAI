@@ -2,6 +2,7 @@
 
 namespace App\Quiz\UI\Http\Dto;
 
+/** Paramètres de l'affichage d'un quiz (?withAnswers=1). */
 class QuizDetailQuery
 {
     public function __construct(

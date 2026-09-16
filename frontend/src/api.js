@@ -1,4 +1,6 @@
+/** Adresse de l'API Symfony (surchargée par VITE_API_URL). */
 const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+/** Clé du localStorage où la session (jeton + compte) est conservée. */
 const STORAGE_KEY = 'quizlab.session'
 
 /** Émis quand le serveur refuse le jeton (expiré, révoqué, compte supprimé). */
@@ -20,6 +22,7 @@ export function readSession() {
   }
 }
 
+/** Enregistre la session dans le navigateur, ou l'efface si elle est vide. */
 export function writeSession(session) {
   if (session) localStorage.setItem(STORAGE_KEY, JSON.stringify(session))
   else localStorage.removeItem(STORAGE_KEY)
@@ -42,6 +45,7 @@ export class ApiError extends Error {
   }
 }
 
+/** Appelle l'API avec le jeton de connexion, et renvoie la réponse JSON ou lève une erreur lisible. */
 export async function api(path, { method = 'GET', body, form } = {}) {
   const session = readSession()
   const headers = form ? {} : { 'Content-Type': 'application/json' }

@@ -22,6 +22,7 @@ class QuizWriter
     ) {
     }
 
+    /** Crée et enregistre un nouveau quiz pour son propriétaire. */
     public function create(QuizInput $input, User $owner, string $author): Quiz
     {
         $quiz = (new Quiz())->setOwner($owner)->setAuthor($author);
@@ -33,6 +34,7 @@ class QuizWriter
         return $quiz;
     }
 
+    /** Met à jour un quiz existant et remplace ses questions. */
     public function update(Quiz $quiz, QuizInput $input): Quiz
     {
         $this->hydrate($quiz, $input);

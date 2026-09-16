@@ -63,6 +63,7 @@ export function ClassPodium({ rows }) {
   )
 }
 
+/** Chiffres clés de la communauté : quiz, joueurs, parties et réussite moyenne. */
 export function CommunityPulse({ stats }) {
   const items = [
     { icon: 'layers', tone: 'accent', value: stats?.quizCount, label: 'quiz partagés' },

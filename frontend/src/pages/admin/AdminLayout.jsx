@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { Icon } from '../../components/Icon'
 
+/** Sections du back-office affichées dans le menu. */
 const SECTIONS = [
   { to: '/admin', end: true, icon: 'dashboard', label: 'Vue d’ensemble', hint: 'Activité de la plateforme' },
   { to: '/admin/comptes', icon: 'users', label: 'Comptes', hint: 'Annuaire et rôles' },

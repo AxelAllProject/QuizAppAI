@@ -8,6 +8,7 @@ export default function ImageField({ value, onChange, label = 'Ajouter une image
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
 
+  /** Téléverse l'image choisie et renvoie son chemin au formulaire. */
   async function pick(event) {
     const file = event.target.files?.[0]
     event.target.value = ''

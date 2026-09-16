@@ -18,6 +18,7 @@ class ApiTokenHandler implements AccessTokenHandlerInterface
     {
     }
 
+    /** Retrouve le compte à partir du jeton Bearer, ou refuse la requête si le jeton est invalide. */
     public function getUserBadgeFrom(#[\SensitiveParameter] string $accessToken): UserBadge
     {
         $token = $this->tokens->findValid($accessToken);

@@ -12,6 +12,7 @@ const CONTROLLER = {
   host: '[à compléter : hébergeur et pays d’hébergement]',
 }
 
+/** Page de politique de confidentialité. */
 export default function Privacy() {
   const { user } = useAuth()
 

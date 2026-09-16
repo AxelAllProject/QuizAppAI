@@ -4,6 +4,7 @@
  * avec basse, arpège, grosse caisse et charleston, jouée à volume discret.
  */
 
+/** Réglages de la musique : tempo, durée d'un pas, volume et avance de planification. */
 const BPM = 112
 const STEP = 60 / BPM / 4 // une double-croche
 const VOLUME = 0.12
@@ -16,6 +17,7 @@ const CHORDS = [
   [41, [53, 57, 60, 65]],
   [43, [55, 59, 62, 67]],
 ]
+/** Ordre des notes de l'accord jouées à chaque temps. */
 const ARPEGGIO = [0, 1, 2, 3, 2, 3, 1, 2]
 
 let ctx = null
@@ -26,8 +28,10 @@ let stopTimeout = null
 let step = 0
 let nextTime = 0
 
+/** Convertit un numéro de note MIDI en fréquence (Hz). */
 const frequency = (midi) => 440 * 2 ** ((midi - 69) / 12)
 
+/** Crée le contexte audio, le filtre, le volume général et le bruit des charleys. */
 function setup() {
   ctx = new AudioContext()
 
@@ -43,6 +47,7 @@ function setup() {
   for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1
 }
 
+/** Joue une note avec une attaque rapide et une extinction progressive. */
 function tone(midi, type, time, duration, volume) {
   const osc = ctx.createOscillator()
   const gain = ctx.createGain()
@@ -56,6 +61,7 @@ function tone(midi, type, time, duration, volume) {
   osc.stop(time + duration + 0.02)
 }
 
+/** Joue un coup de grosse caisse. */
 function kick(time) {
   const osc = ctx.createOscillator()
   const gain = ctx.createGain()
@@ -68,6 +74,7 @@ function kick(time) {
   osc.stop(time + 0.17)
 }
 
+/** Joue un coup de charley (bruit filtré). */
 function hat(time) {
   const source = ctx.createBufferSource()
   const filter = ctx.createBiquadFilter()
@@ -81,6 +88,7 @@ function hat(time) {
   source.start(time)
 }
 
+/** Joue ce qui tombe sur un pas de la boucle : basse, arpège et percussions. */
 function playStep(index, time) {
   const [bass, notes] = CHORDS[Math.floor(index / 16) % CHORDS.length]
   const position = index % 16
@@ -91,6 +99,7 @@ function playStep(index, time) {
   if (position % 4 === 2) hat(time)
 }
 
+/** Planifie les pas à venir un peu en avance, pour un tempo régulier. */
 function schedule() {
   while (nextTime < ctx.currentTime + LOOKAHEAD) {
     playStep(step, nextTime)
@@ -99,6 +108,7 @@ function schedule() {
   }
 }
 
+/** Lance la musique de fond en fondu. */
 export function startMusic() {
   if (!ctx) setup()
   clearTimeout(stopTimeout)
@@ -119,6 +129,7 @@ export function startMusic() {
   timer = setInterval(schedule, 25)
 }
 
+/** Arrête la musique en fondu. */
 export function stopMusic() {
   if (!timer) return
 

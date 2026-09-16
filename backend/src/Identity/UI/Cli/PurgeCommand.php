@@ -19,6 +19,7 @@ class PurgeCommand
     ) {
     }
 
+    /** Supprime les données arrivées en fin de conservation, ou affiche ce qui le serait avec --dry-run. */
     public function __invoke(
         SymfonyStyle $io,
         #[Option(description: 'Affiche ce qui serait supprimé sans rien supprimer')]

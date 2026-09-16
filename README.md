@@ -173,8 +173,8 @@ l'écran tient quand la base grossit. Chaque clé porte un **état** unique
 
 ### Créer un quiz par IA (chatbot)
 
-Une **bulle de chat flottante** (visible sur toutes les pages pour les
-professeurs et administrateurs) permet de décrire un sujet en une phrase :
+Une **bulle de chat flottante**, affichée uniquement sur la page **Créer**
+(`/create`) et réservée aux professeurs et administrateurs, permet de décrire un sujet en une phrase :
 l'**API Groq** (gratuite) rédige les questions et le quiz est **publié
 directement** dans la bibliothèque, prêt à jouer.
 

@@ -21,11 +21,13 @@ class DoctrineAiKeyRepository extends ServiceEntityRepository implements AiKeyRe
         parent::__construct($registry, AiKey::class);
     }
 
+    /** Récupère une clé IA par son identifiant. */
     public function ofId(int $id): ?AiKey
     {
         return $this->find($id);
     }
 
+    /** Récupère une clé IA par son code. */
     public function findByValue(string $value): ?AiKey
     {
         return $this->findOneBy(['value' => $value]);
@@ -109,6 +111,7 @@ class DoctrineAiKeyRepository extends ServiceEntityRepository implements AiKeyRe
             ->execute();
     }
 
+    /** Prépare l'enregistrement d'une nouvelle clé IA. */
     public function add(AiKey $aiKey): void
     {
         $this->getEntityManager()->persist($aiKey);

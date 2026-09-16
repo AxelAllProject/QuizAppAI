@@ -8,6 +8,7 @@ use App\Quiz\Domain\Model\Quiz;
 use App\Quiz\Domain\Repository\QuizRepository;
 use App\Shared\Application\UnitOfWork;
 
+/** Supprime un quiz en gardant l'historique des parties jouées. */
 class DeleteQuiz
 {
     public function __construct(

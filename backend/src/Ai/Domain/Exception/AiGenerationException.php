@@ -13,6 +13,7 @@ class AiGenerationException extends \RuntimeException
         parent::__construct($message);
     }
 
+    /** Code HTTP à renvoyer au navigateur. */
     public function getStatusCode(): int
     {
         return $this->statusCode;

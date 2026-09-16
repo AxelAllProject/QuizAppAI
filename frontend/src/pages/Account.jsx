@@ -5,8 +5,10 @@ import { useAuth } from '../auth'
 import { ErrorBox, Field, formatDate } from '../components/ui'
 import { Icon } from '../components/Icon'
 
+/** Libellé affiché pour chaque rôle. */
 const ROLE_LABELS = { user: 'joueur', prof: 'professeur', admin: 'administrateur' }
 
+/** Page « Mon compte » : clés, export et suppression des données. */
 export default function Account() {
   const { user, isAdmin, canCreate, updateUser, endSession } = useAuth()
   const navigate = useNavigate()
@@ -19,6 +21,7 @@ export default function Account() {
   const [password, setPassword] = useState('')
   const [deleteState, setDeleteState] = useState({ busy: false, error: null })
 
+  /** Envoie la clé d'accès saisie et met à jour le rôle affiché. */
   async function redeem(event) {
     event.preventDefault()
     setKeyState({ busy: true, error: null, done: false })
@@ -32,6 +35,7 @@ export default function Account() {
     }
   }
 
+  /** Envoie la clé IA saisie et met à jour le quota affiché. */
   async function redeemAiKey(event) {
     event.preventDefault()
     setAiKeyState({ busy: true, error: null, done: false })
@@ -45,6 +49,7 @@ export default function Account() {
     }
   }
 
+  /** Télécharge toutes les données du compte en JSON. */
   async function exportData() {
     setExportError(null)
     try {
@@ -54,6 +59,7 @@ export default function Account() {
     }
   }
 
+  /** Supprime le compte après confirmation et mot de passe, puis renvoie à la connexion. */
   async function remove(event) {
     event.preventDefault()
     if (!confirm('Supprimer définitivement ton compte et ton historique ? Cette action ne peut pas être annulée.')) return

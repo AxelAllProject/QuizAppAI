@@ -22,11 +22,13 @@ class QuizFixtures extends Fixture implements DependentFixtureInterface, Fixture
     {
     }
 
+    /** Nom de référence d'un quiz, pour le retrouver dans les autres fixtures. */
     public static function ref(string $slug): string
     {
         return 'quiz.'.$slug;
     }
 
+    /** Crée les quiz de démonstration via QuizWriter. */
     public function load(ObjectManager $manager): void
     {
         foreach (self::quizzes() as $slug => $data) {
@@ -107,11 +109,13 @@ class QuizFixtures extends Fixture implements DependentFixtureInterface, Fixture
         ];
     }
 
+    /** Fixtures à charger avant celles-ci. */
     public function getDependencies(): array
     {
         return [UserFixtures::class];
     }
 
+    /** Groupes permettant de charger ces fixtures seules (--group=quizzes). */
     public static function getGroups(): array
     {
         return ['demo', 'quizzes'];

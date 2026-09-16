@@ -3,6 +3,7 @@ import { SESSION_EXPIRED, api, readSession, writeSession } from './api'
 
 const AuthContext = createContext(null)
 
+/** Fournit à toute l'application le compte connecté, la connexion, l'inscription et les droits. */
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(readSession)
   const token = session?.token
@@ -74,6 +75,7 @@ export function AuthProvider({ children }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
+/** Récupère le compte connecté et les actions de connexion dans un composant. */
 export function useAuth() {
   const context = useContext(AuthContext)
   if (!context) throw new Error('useAuth doit être utilisé dans <AuthProvider>')

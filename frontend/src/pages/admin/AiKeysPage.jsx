@@ -17,6 +17,7 @@ import {
 import UserPicker from '../../components/UserPicker'
 import { ErrorBox, Field, formatDate } from '../../components/ui'
 
+/** Options du filtre par état. */
 const STATUS_FILTERS = [
   ['', 'Tous les états'],
   ['active', 'Active'],
@@ -26,6 +27,7 @@ const STATUS_FILTERS = [
   ['revoked', 'Révoquée'],
 ]
 
+/** Durées de validité proposées à la création d'une clé IA. */
 const DURATIONS = [
   ['', 'Sans expiration'],
   ['7', '7 jours'],
@@ -34,6 +36,7 @@ const DURATIONS = [
   ['365', '1 an'],
 ]
 
+/** Filtres vides (tout afficher). */
 const EMPTY = { search: '', status: '' }
 
 /** Clés IA : la génération de quiz est une option payante, indépendante du rôle. */
@@ -53,6 +56,7 @@ export default function AiKeysPage() {
   const [busy, setBusy] = useState(false)
   const [created, setCreated] = useState(null)
 
+  /** Crée une clé IA (ou la lie à un compte) et l'affiche en tête. */
   async function create(event) {
     event.preventDefault()
     setBusy(true)
@@ -81,6 +85,7 @@ export default function AiKeysPage() {
     }
   }
 
+  /** Révoque une clé IA après confirmation. */
   async function revoke(key) {
     if (!confirm(`Révoquer la clé ${key.value} ? Elle ne débloquera plus la génération.`)) return
 

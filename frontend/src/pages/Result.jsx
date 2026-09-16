@@ -8,6 +8,7 @@ import { ErrorBox, Loader, ScoreRing, formatDuration } from '../components/ui'
 import { plural } from '../progress'
 import { Icon } from '../components/Icon'
 
+/** Message d'encouragement selon le pourcentage de réussite. */
 function verdict(accuracy) {
   if (accuracy === 100) return 'Sans-faute ! Tu maîtrises ce sujet — de quoi lancer le défi à tes camarades.'
   if (accuracy >= 75) return 'Très bien joué : il reste quelques notions à consolider, détaillées ci-dessous.'
@@ -15,10 +16,12 @@ function verdict(accuracy) {
   return 'Chaque erreur est une occasion d’apprendre : les explications ci-dessous vont t’aider.'
 }
 
+/** Écrit une place au classement (1re, 2e…). */
 function place(rank) {
   return rank === 1 ? '1re' : `${rank}e`
 }
 
+/** Correction d'une question : réponse donnée, bonne réponse et explication. */
 function Lesson({ answer, position }) {
   const chosen = answer.chosenIndex === null || answer.chosenIndex === undefined ? null : answer.choices[answer.chosenIndex]
 
@@ -52,6 +55,7 @@ function Lesson({ answer, position }) {
   )
 }
 
+/** Page de correction d'une partie, avec le classement du quiz. */
 export default function Result() {
   const { id } = useParams()
   const location = useLocation()

@@ -15,6 +15,7 @@ export default function LiveHost() {
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState(null)
 
+  /** Envoie une action de l'animateur (étape suivante, arrêt) et affiche l'erreur éventuelle. */
   async function run(method, path) {
     setBusy(true)
     setActionError(null)
@@ -27,6 +28,7 @@ export default function LiveHost() {
     }
   }
 
+  /** Arrête la partie après confirmation. */
   function stop() {
     if (confirm('Arrêter la partie ? Les questions déjà posées restent comptées dans l’historique des joueurs.')) {
       run('DELETE')

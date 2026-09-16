@@ -10,6 +10,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Filesystem\Filesystem;
 
+/** Commande console pour générer ou afficher la clé de secours ADMIN_CODE. */
 #[AsCommand(name: 'app:admin-key', description: "Génère ou affiche la clé d'accès administrateur")]
 class AdminKeyCommand
 {
@@ -23,6 +24,7 @@ class AdminKeyCommand
     ) {
     }
 
+    /** Génère une nouvelle clé de secours dans .env.local, ou affiche l'actuelle avec --show. */
     public function __invoke(
         SymfonyStyle $io,
         #[Option(description: 'Affiche la clé actuelle sans en générer une nouvelle')]

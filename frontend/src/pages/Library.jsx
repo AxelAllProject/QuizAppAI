@@ -9,6 +9,7 @@ import { Empty, ErrorBox, Loader, QuizCard, subjectOf } from '../components/ui'
 import { summarize } from '../progress'
 import { Icon } from '../components/Icon'
 
+/** Page d'accueil : bibliothèque de quiz filtrable et progression du joueur. */
 export default function Library() {
   const { user, canCreate } = useAuth()
   const navigate = useNavigate()
@@ -59,6 +60,7 @@ export default function Library() {
 
   const learning = useMemo(() => summarize(history), [history])
 
+  /** Lance une partie en direct sur ce quiz et ouvre l'écran de l'animateur. */
   async function host(quiz) {
     setError(null)
     try {
@@ -69,6 +71,7 @@ export default function Library() {
     }
   }
 
+  /** Supprime un quiz après confirmation et le retire de la liste. */
   async function remove(quiz) {
     if (!confirm(`Supprimer « ${quiz.title} » ? Cette action est définitive.`)) return
 

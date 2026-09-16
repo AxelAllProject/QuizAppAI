@@ -5,12 +5,14 @@ namespace App\Access\UI\Http;
 use App\Access\Domain\Model\AccessKey;
 use Psr\Clock\ClockInterface;
 
+/** Transforme une clé d'accès en tableau JSON pour le back-office. */
 class AccessKeyNormalizer
 {
     public function __construct(private readonly ClockInterface $clock)
     {
     }
 
+    /** Renvoie les champs affichés d'une clé, avec son état calculé à l'instant présent. */
     public function normalize(AccessKey $key): array
     {
         $now = $this->clock->now();

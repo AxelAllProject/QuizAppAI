@@ -4,6 +4,7 @@ namespace App\Identity\UI\Http\Dto;
 
 use Symfony\Component\Validator\Constraints as Assert;
 
+/** Formulaire d'inscription : e-mail, pseudo, mot de passe, consentement et clé d'accès facultative. */
 class RegisterInput
 {
     public function __construct(

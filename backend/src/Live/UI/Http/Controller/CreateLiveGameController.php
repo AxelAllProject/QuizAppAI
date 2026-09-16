@@ -24,6 +24,7 @@ class CreateLiveGameController extends AbstractController
     ) {
     }
 
+    /** Crée une partie en direct sur le quiz choisi et renvoie son état (avec le code PIN). */
     #[Route('/api/live-games', name: 'api_live_create', methods: ['POST'])]
     #[IsGranted('ROLE_TEACHER', message: 'Il faut être professeur ou administrateur pour animer une partie.')]
     public function __invoke(#[MapRequestPayload] LiveGameInput $input, #[CurrentUser] User $user): JsonResponse

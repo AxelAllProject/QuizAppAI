@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom'
 import { api } from '../api'
 import { Icon } from './Icon'
 
+/** Nombres de réponses proposés par question. */
 const CHOICE_COUNTS = [2, 3, 4, 5, 6]
 
+/** Message d'accueil affiché à l'ouverture du chat. */
 const WELCOME = {
   id: 'welcome',
   role: 'assistant',
@@ -13,10 +15,10 @@ const WELCOME = {
 }
 
 /**
- * Bulle de chat flottante (façon widget de support), disponible sur toutes les pages
- * pour les professeurs et administrateurs : décrire un sujet suffit, le quiz est
- * rédigé par l'IA et publié tout de suite — un aller-retour par message, sans
- * étape manuelle. Reste ouverte et garde son fil de discussion en changeant de page.
+ * Bulle de chat flottante (façon widget de support), affichée uniquement sur la page
+ * de création de quiz, pour les professeurs et administrateurs : décrire un sujet
+ * suffit, le quiz est rédigé par l'IA et publié tout de suite — un aller-retour par
+ * message, sans étape manuelle.
  */
 export default function AiChatWidget() {
   const [open, setOpen] = useState(false)
@@ -32,6 +34,7 @@ export default function AiChatWidget() {
     if (open) scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
   }, [messages, open])
 
+  /** Envoie le sujet à l'API de génération et affiche le quiz créé ou l'erreur. */
   async function send(askedTopic) {
     const question = askedTopic.trim()
     if (!question || busy) return
@@ -57,10 +60,12 @@ export default function AiChatWidget() {
     }
   }
 
+  /** Remplace l'indicateur « en train d'écrire » par la réponse reçue. */
   function replaceTyping(message) {
     setMessages((current) => [...current.filter((m) => m.id !== 'typing'), message])
   }
 
+  /** Supprime un quiz généré, après confirmation. */
   async function remove(message) {
     if (!confirm(`Supprimer « ${message.quiz.title} » ? Cette action est définitive.`)) return
 
@@ -149,6 +154,7 @@ export default function AiChatWidget() {
   )
 }
 
+/** Affiche un message du fil : saisie en cours, erreur, quiz créé ou simple texte. */
 function AiMessage({ message, onRetry, onRemove }) {
   if ('typing' === message.kind) {
     return (

@@ -14,6 +14,7 @@ use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Attribute\Route;
 
+/** Route de connexion. */
 class LoginController extends AbstractController
 {
     use ThrottlesRequests;
@@ -30,6 +31,7 @@ class LoginController extends AbstractController
     ) {
     }
 
+    /** Vérifie les limites de tentatives, puis les identifiants, et renvoie un jeton de connexion. */
     #[Route('/api/login', name: 'api_login', methods: ['POST'])]
     public function __invoke(#[MapRequestPayload] LoginInput $input, Request $request): JsonResponse
     {

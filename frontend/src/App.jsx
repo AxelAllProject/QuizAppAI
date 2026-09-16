@@ -1,9 +1,9 @@
 import { Link, NavLink, Navigate, Outlet, useLocation } from 'react-router-dom'
-import AiChatWidget from './components/AiChatWidget'
 import Brand from './components/Brand'
 import { Avatar } from './components/ui'
 import { useAuth } from './auth'
 
+/** Libellé affiché pour chaque rôle dans l'en-tête. */
 const ROLE_LABELS = { user: 'élève', prof: 'professeur', admin: 'administrateur' }
 
 /** Toute l'application est derrière la connexion. */
@@ -58,8 +58,6 @@ export default function App() {
         <Link to="/account">Mon compte</Link>
         <Link to="/confidentialite">Confidentialité et données personnelles</Link>
       </footer>
-
-      {canCreate && <AiChatWidget />}
     </div>
   )
 }

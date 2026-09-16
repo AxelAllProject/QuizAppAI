@@ -36,6 +36,7 @@ class LiveGameEngine
     ) {
     }
 
+    /** Inscrit le compte comme joueur, ou renvoie sa participation s'il a déjà rejoint. */
     public function join(LiveGame $game, User $user): LivePlayer
     {
         if ($player = $this->playerOf($game, $user)) {
@@ -57,6 +58,7 @@ class LiveGameEngine
         return $player;
     }
 
+    /** Récupère la participation d'un compte à la partie, ou null s'il n'a pas rejoint. */
     public function playerOf(LiveGame $game, User $user): ?LivePlayer
     {
         foreach ($game->getPlayers() as $player) {
@@ -103,6 +105,7 @@ class LiveGameEngine
         $this->unitOfWork->flush();
     }
 
+    /** Enregistre la réponse d'un joueur à la question en cours et calcule ses points. */
     public function answer(LiveGame $game, LivePlayer $player, int $choiceIndex): LiveAnswer
     {
         $this->refresh($game);
@@ -154,6 +157,7 @@ class LiveGameEngine
         }
     }
 
+    /** Calcule les points d'une bonne réponse selon le temps mis à répondre (de 1000 à 500). */
     public function points(int $elapsedMs, int $timeLimit): int
     {
         $ratio = min(1, max(0, $elapsedMs / ($timeLimit * 1000)));
@@ -161,6 +165,7 @@ class LiveGameEngine
         return (int) round(self::MAX_POINTS * (1 - $ratio / 2));
     }
 
+    /** Temps restant sur la question en cours, en millisecondes (0 hors question). */
     public function remainingMs(LiveGame $game): int
     {
         $question = $this->currentQuestion($game);
@@ -172,11 +177,13 @@ class LiveGameEngine
         return max(0, $question->getTimeLimit() * 1000 - $this->elapsedMs($game));
     }
 
+    /** Récupère la question en cours, ou null avant le début de la partie. */
     public function currentQuestion(LiveGame $game): ?Question
     {
         return $game->getQuiz()->getQuestions()->getValues()[$game->getCurrentIndex()] ?? null;
     }
 
+    /** Nombre de questions du quiz joué. */
     public function questionCount(LiveGame $game): int
     {
         return $game->getQuiz()->getQuestions()->count();
@@ -191,6 +198,7 @@ class LiveGameEngine
         return $players;
     }
 
+    /** Indique si tous les joueurs ont répondu à la question en cours. */
     private function everyoneAnswered(LiveGame $game): bool
     {
         foreach ($game->getPlayers() as $player) {
@@ -202,11 +210,13 @@ class LiveGameEngine
         return true;
     }
 
+    /** Temps écoulé depuis le début de la question en cours, en millisecondes. */
     private function elapsedMs(LiveGame $game): int
     {
         return max(0, $this->nowMs() - (int) $game->getQuestionStartedAtMs());
     }
 
+    /** Heure actuelle en millisecondes, lue sur l'horloge injectée. */
     private function nowMs(): int
     {
         return (int) $this->clock->now()->format('Uv');

@@ -34,6 +34,7 @@ class AiController extends AbstractController
     ) {
     }
 
+    /** Vérifie la clé IA et la limite de débit, puis génère et publie le quiz. */
     #[Route('/api/ai/quizzes', name: 'api_ai_quiz_create', methods: ['POST'])]
     public function __invoke(#[MapRequestPayload] GenerateQuizInput $input, #[CurrentUser] User $user): JsonResponse
     {

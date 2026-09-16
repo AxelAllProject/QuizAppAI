@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 
+/** Couleurs des confettis, reprises du thème. */
 const COLORS = ['var(--accent)', 'var(--pop)', 'var(--gold)', 'var(--success)', 'var(--accent-strong)']
 
 /** Petite pluie de confettis en CSS pur, pour célébrer un bon score sans dépendance externe. */

@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react'
 import { startMusic, stopMusic } from '../music'
 import { Icon } from './Icon'
 
+/** Clé du localStorage qui retient si la musique est coupée. */
 const STORAGE_KEY = 'quizlab.music'
 
+/** Lit la préférence musique enregistrée (activée par défaut). */
 function readPreference() {
   try {
     return localStorage.getItem(STORAGE_KEY) !== 'off'
@@ -23,6 +25,7 @@ export default function MusicToggle({ playing }) {
 
   useEffect(() => stopMusic, [])
 
+  /** Active ou coupe la musique, et retient le choix. */
   function toggle() {
     const next = !enabled
     setEnabled(next)

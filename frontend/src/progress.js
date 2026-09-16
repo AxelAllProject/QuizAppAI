@@ -23,6 +23,7 @@ export function latestByQuiz(sessions) {
   return latest
 }
 
+/** Résume la progression : meilleurs scores, moyenne, quiz maîtrisés et à retravailler. */
 export function summarize(sessions) {
   const best = bestByQuiz(sessions)
 
@@ -42,10 +43,12 @@ export function progressOf(accuracy) {
   return { tone: 'todo', label: 'À revoir' }
 }
 
+/** Couleur associée à un pourcentage de réussite (bon, moyen, faible). */
 export function toneOf(accuracy) {
   return accuracy >= MASTERED ? 'good' : accuracy >= TO_REVIEW ? 'mid' : 'low'
 }
 
+/** Accorde un mot selon le nombre (« 1 partie », « 2 parties »). */
 export function plural(count, word) {
   return `${count} ${word}${count > 1 ? 's' : ''}`
 }

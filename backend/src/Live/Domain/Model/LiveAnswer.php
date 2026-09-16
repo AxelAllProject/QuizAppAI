@@ -4,6 +4,7 @@ namespace App\Live\Domain\Model;
 
 use Doctrine\ORM\Mapping as ORM;
 
+/** Réponse d'un joueur à une question d'une partie en direct. */
 #[ORM\Entity]
 #[ORM\UniqueConstraint(columns: ['player_id', 'question_index'])]
 class LiveAnswer
@@ -36,6 +37,7 @@ class LiveAnswer
     ) {
     }
 
+    // Accesseurs : lecture et modification des champs de l'entité.
     public function getId(): ?int
     {
         return $this->id;
@@ -56,6 +58,7 @@ class LiveAnswer
         return $this->choiceIndex;
     }
 
+    /** Indique si le joueur a choisi la bonne réponse. */
     public function isCorrect(): bool
     {
         return $this->correct;

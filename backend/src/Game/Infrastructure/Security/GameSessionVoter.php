@@ -18,6 +18,7 @@ class GameSessionVoter extends Voter
     {
     }
 
+    /** Ce voter ne répond qu'à GAME_SESSION_VIEW sur une partie solo. */
     protected function supports(string $attribute, mixed $subject): bool
     {
         return self::VIEW === $attribute && $subject instanceof GameSession;

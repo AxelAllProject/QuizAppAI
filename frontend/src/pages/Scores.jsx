@@ -5,6 +5,7 @@ import Ranking from '../components/Ranking'
 import { Avatar, ErrorBox, formatDuration } from '../components/ui'
 import { Icon } from '../components/Icon'
 
+/** Page du classement d'un quiz. */
 export default function Scores() {
   const { id } = useParams()
   const [quiz, setQuiz] = useState(null)

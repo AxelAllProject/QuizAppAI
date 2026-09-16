@@ -32,6 +32,7 @@ class DoctrineApiTokenRepository extends ServiceEntityRepository implements ApiT
         return $plain;
     }
 
+    /** Récupère un jeton non expiré par l'empreinte de sa valeur, avec son compte. */
     public function findValid(#[\SensitiveParameter] string $plain): ?ApiToken
     {
         return $this->createQueryBuilder('t')
@@ -45,6 +46,7 @@ class DoctrineApiTokenRepository extends ServiceEntityRepository implements ApiT
             ->getOneOrNullResult();
     }
 
+    /** Supprime le jeton correspondant à la valeur envoyée. */
     public function revoke(#[\SensitiveParameter] string $plain): void
     {
         $this->createQueryBuilder('t')
@@ -55,6 +57,7 @@ class DoctrineApiTokenRepository extends ServiceEntityRepository implements ApiT
             ->execute();
     }
 
+    /** Supprime les jetons expirés, en une requête. */
     public function deleteExpired(): int
     {
         return $this->createQueryBuilder('t')
@@ -65,6 +68,7 @@ class DoctrineApiTokenRepository extends ServiceEntityRepository implements ApiT
             ->execute();
     }
 
+    /** Supprime tous les jetons d'un compte, en une requête. */
     public function deleteByUser(User $user): void
     {
         $this->createQueryBuilder('t')
@@ -75,6 +79,7 @@ class DoctrineApiTokenRepository extends ServiceEntityRepository implements ApiT
             ->execute();
     }
 
+    /** Empreinte SHA-256 du jeton : seule elle est stockée en base. */
     private static function hash(#[\SensitiveParameter] string $plain): string
     {
         return hash('sha256', $plain);

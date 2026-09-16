@@ -6,8 +6,10 @@ import Brand from '../components/Brand'
 import { ErrorBox, Field } from '../components/ui'
 import { Icon } from '../components/Icon'
 
+/** Valeurs initiales du formulaire de connexion et d'inscription. */
 const EMPTY = { email: '', name: '', password: '', consent: false, accessKey: '' }
 
+/** Page de connexion et d'inscription. */
 export default function Login() {
   const { user, login, register } = useAuth()
   const navigate = useNavigate()
@@ -21,14 +23,17 @@ export default function Login() {
   if (user) return <Navigate to={location.state?.from ?? '/'} replace />
 
   const registering = mode === 'register'
+  /** Crée le gestionnaire qui met à jour un champ du formulaire. */
   const set = (field) => (event) =>
     setForm({ ...form, [field]: event.target.type === 'checkbox' ? event.target.checked : event.target.value })
 
+  /** Bascule entre connexion et inscription. */
   function switchMode(next) {
     setMode(next)
     setError(null)
   }
 
+  /** Connecte ou inscrit le compte, puis revient à la page demandée. */
   async function submit(event) {
     event.preventDefault()
     setBusy(true)

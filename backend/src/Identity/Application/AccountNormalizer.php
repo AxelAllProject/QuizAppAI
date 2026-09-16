@@ -6,12 +6,14 @@ use App\Ai\Domain\Model\AiKey;
 use App\Ai\Domain\Repository\AiKeyRepository;
 use App\Identity\Domain\Model\User;
 
+/** Transforme le compte connecté en tableau JSON pour « Mon compte ». */
 class AccountNormalizer
 {
     public function __construct(private readonly AiKeyRepository $aiKeys)
     {
     }
 
+    /** Renvoie les informations du compte et sa clé IA active s'il en a une. */
     public function me(User $user): array
     {
         return [
@@ -26,6 +28,7 @@ class AccountNormalizer
         ];
     }
 
+    /** Renvoie le quota restant et l'expiration d'une clé IA. */
     private function aiKey(AiKey $key): array
     {
         return [

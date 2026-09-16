@@ -14,6 +14,7 @@ use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
+/** Route d'enregistrement d'une partie solo. */
 class PlaySessionController extends AbstractController
 {
     public function __construct(

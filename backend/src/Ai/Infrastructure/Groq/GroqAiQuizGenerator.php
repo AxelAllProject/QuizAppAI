@@ -63,6 +63,7 @@ class GroqAiQuizGenerator implements AiQuizGenerator
     ) {
     }
 
+    /** Indique si une clé d'API Groq est configurée. */
     public function isConfigured(): bool
     {
         return '' !== $this->apiKey;
@@ -105,6 +106,7 @@ class GroqAiQuizGenerator implements AiQuizGenerator
         return $this->sanitize(json_decode($outputText, true) ?? [], $input);
     }
 
+    /** Rédige la consigne envoyée à l'IA à partir de la demande du professeur. */
     private function prompt(GenerateQuizInput $input): string
     {
         return sprintf(
@@ -172,6 +174,7 @@ class GroqAiQuizGenerator implements AiQuizGenerator
         ];
     }
 
+    /** Extrait le message d'erreur renvoyé par l'API Groq. */
     private function apiErrorMessage(ClientException $exception): string
     {
         $body = $exception->getResponse()->toArray(false);

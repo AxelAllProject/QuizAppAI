@@ -5,6 +5,7 @@ import { Tile } from '../components/live'
 import MusicToggle from '../components/MusicToggle'
 import { ErrorBox, Loader } from '../components/ui'
 
+/** Partie solo : une question à la fois, puis envoi des réponses pour correction. */
 export default function Play() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -30,10 +31,12 @@ export default function Play() {
     [quiz, index],
   )
 
+  /** Retient la réponse choisie pour la question en cours. */
   function choose(choiceIndex) {
     setAnswers((current) => ({ ...current, [question.id]: choiceIndex }))
   }
 
+  /** Envoie les réponses au serveur et ouvre la correction. */
   async function finish() {
     setSending(true)
     setError(null)

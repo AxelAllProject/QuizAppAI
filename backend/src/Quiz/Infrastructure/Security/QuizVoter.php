@@ -18,6 +18,7 @@ class QuizVoter extends Voter
     {
     }
 
+    /** Ce voter ne répond qu'à QUIZ_EDIT sur un quiz. */
     protected function supports(string $attribute, mixed $subject): bool
     {
         return self::EDIT === $attribute && $subject instanceof Quiz;

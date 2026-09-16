@@ -4,6 +4,7 @@ import emptyArt from '../assets/empty-notebook.svg'
 import { Icon } from './Icon'
 import { plural, progressOf } from '../progress'
 
+/** Champ de formulaire avec son libellé et une aide facultative. */
 export function Field({ label, hint, children }) {
   return (
     <div className="field">
@@ -32,6 +33,7 @@ export function ErrorBox({ error }) {
   )
 }
 
+/** Message illustré affiché quand une liste est vide. */
 export function Empty({ title, children, action }) {
   return (
     <div className="empty">
@@ -43,6 +45,7 @@ export function Empty({ title, children, action }) {
   )
 }
 
+/** Cartes grisées affichées pendant un chargement. */
 export function Loader({ count = 3 }) {
   return (
     <div className="grid">
@@ -74,6 +77,7 @@ export function hueOf(text = '') {
   return hue
 }
 
+/** Icône et couleur associées à une matière, devinées depuis son nom. */
 export function subjectOf(category = '') {
   return {
     icon: SUBJECT_ICONS.find(([pattern]) => pattern.test(category))?.[1] ?? 'book',
@@ -81,6 +85,7 @@ export function subjectOf(category = '') {
   }
 }
 
+/** Pastille de matière avec son icône et sa couleur. */
 export function Subject({ category }) {
   const { icon, hue } = subjectOf(category)
   return (
@@ -90,6 +95,7 @@ export function Subject({ category }) {
   )
 }
 
+/** Pastille ronde avec les initiales d'un pseudo. */
 export function Avatar({ name, size = '' }) {
   const label = name || '?'
   return (
@@ -99,6 +105,7 @@ export function Avatar({ name, size = '' }) {
   )
 }
 
+/** Carte d'un quiz dans la bibliothèque, avec les actions permises. */
 export function QuizCard({ quiz, best, onDelete, onHost }) {
   const { icon, hue } = subjectOf(quiz.category)
   const progress = progressOf(best)
@@ -159,6 +166,7 @@ export function QuizCard({ quiz, best, onDelete, onHost }) {
   )
 }
 
+/** Anneau de progression affichant le pourcentage de réussite. */
 export function ScoreRing({ accuracy }) {
   return (
     <div className="score-ring" style={{ '--value': accuracy }}>
@@ -169,6 +177,7 @@ export function ScoreRing({ accuracy }) {
   )
 }
 
+/** Formate une date ISO en date et heure courtes, en français. */
 export function formatDate(iso) {
   return new Date(iso).toLocaleString('fr-FR', {
     day: '2-digit',
@@ -178,6 +187,7 @@ export function formatDate(iso) {
   })
 }
 
+/** Formate une durée en secondes (« 1 min 05 » ou « 42 s »). */
 export function formatDuration(seconds) {
   if (seconds === null || seconds === undefined) return '—'
   const m = Math.floor(seconds / 60)

@@ -24,6 +24,7 @@ function masteryBySubject(sessions, quizzes) {
     .sort((a, b) => b.accuracy - a.accuracy)
 }
 
+/** Page « Mon parcours » : historique des parties et maîtrise par matière. */
 export default function History() {
   const [sessions, setSessions] = useState(null)
   const [quizzes, setQuizzes] = useState([])

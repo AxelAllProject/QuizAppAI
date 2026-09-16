@@ -18,11 +18,13 @@ class DoctrineQuizRepository extends ServiceEntityRepository implements QuizRepo
         parent::__construct($registry, Quiz::class);
     }
 
+    /** Récupère un quiz par son identifiant. */
     public function ofId(int $id): ?Quiz
     {
         return $this->find($id);
     }
 
+    /** Récupère un quiz par son titre exact. */
     public function findOneByTitle(string $title): ?Quiz
     {
         return $this->findOneBy(['title' => $title]);
@@ -69,11 +71,13 @@ class DoctrineQuizRepository extends ServiceEntityRepository implements QuizRepo
         return array_column($rows, 'category');
     }
 
+    /** Compte les quiz en base. */
     public function countAll(): int
     {
         return $this->count();
     }
 
+    /** Retire le propriétaire de ses quiz et remplace l'auteur affiché, en une requête. */
     public function anonymizeOwner(User $owner, string $anonymous): void
     {
         $this->createQueryBuilder('q')
@@ -88,11 +92,13 @@ class DoctrineQuizRepository extends ServiceEntityRepository implements QuizRepo
             ->execute();
     }
 
+    /** Prépare l'enregistrement d'un nouveau quiz. */
     public function add(Quiz $quiz): void
     {
         $this->getEntityManager()->persist($quiz);
     }
 
+    /** Prépare la suppression d'un quiz. */
     public function remove(Quiz $quiz): void
     {
         $this->getEntityManager()->remove($quiz);

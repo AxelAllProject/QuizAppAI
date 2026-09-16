@@ -10,6 +10,7 @@ export default function JoinForm({ initialPin = '', className = 'stack', style, 
   const [error, setError] = useState(null)
   const [busy, setBusy] = useState(false)
 
+  /** Rejoint la partie avec le code PIN saisi, puis ouvre l'écran du joueur. */
   async function submit(event) {
     event.preventDefault()
     setBusy(true)

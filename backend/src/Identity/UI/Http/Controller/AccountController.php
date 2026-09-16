@@ -26,12 +26,14 @@ class AccountController extends AbstractController
     ) {
     }
 
+    /** Renvoie le compte connecté. */
     #[Route('', name: 'api_me', methods: ['GET'])]
     public function me(#[CurrentUser] User $user): JsonResponse
     {
         return $this->json($this->accounts->me($user));
     }
 
+    /** Télécharge toutes les données du compte en JSON. */
     #[Route('/export', name: 'api_me_export', methods: ['GET'])]
     public function export(#[CurrentUser] User $user): JsonResponse
     {
@@ -42,6 +44,7 @@ class AccountController extends AbstractController
         return $response;
     }
 
+    /** Supprime le compte connecté après vérification du mot de passe. */
     #[Route('', name: 'api_me_delete', methods: ['DELETE'])]
     public function delete(#[CurrentUser] User $user, #[MapRequestPayload] DeleteAccountInput $input): JsonResponse
     {

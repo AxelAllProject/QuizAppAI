@@ -36,6 +36,7 @@ class GameSessionFixtures extends Fixture implements DependentFixtureInterface, 
     {
     }
 
+    /** Joue et enregistre les parties de démonstration. */
     public function load(ObjectManager $manager): void
     {
         foreach (self::SESSIONS as [$username, $slug, $correctCount, $duration]) {
@@ -61,11 +62,13 @@ class GameSessionFixtures extends Fixture implements DependentFixtureInterface, 
         return $answers;
     }
 
+    /** Fixtures à charger avant celles-ci. */
     public function getDependencies(): array
     {
         return [UserFixtures::class, QuizFixtures::class];
     }
 
+    /** Groupes permettant de charger ces fixtures seules (--group=sessions). */
     public static function getGroups(): array
     {
         return ['demo', 'sessions'];

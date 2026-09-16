@@ -44,6 +44,7 @@ class LiveGameController extends AbstractController
         return $this->json($this->normalizer->state($game, $player, $this->isHost($game, $user)));
     }
 
+    /** Fait rejoindre la partie au compte connecté. */
     #[Route('/{pin}/join', name: 'api_live_join', methods: ['POST'], requirements: ['pin' => '\d{6}'])]
     public function join(string $pin, #[CurrentUser] User $user): JsonResponse
     {
@@ -60,6 +61,7 @@ class LiveGameController extends AbstractController
         return $this->json($this->normalizer->state($game, $player, false));
     }
 
+    /** Fait passer la partie à l'étape suivante (réservé à l'animateur). */
     #[Route('/{pin}/next', name: 'api_live_next', methods: ['POST'], requirements: ['pin' => '\d{6}'])]
     public function next(string $pin, #[CurrentUser] User $user): JsonResponse
     {
@@ -80,6 +82,7 @@ class LiveGameController extends AbstractController
         return $this->json($this->normalizer->state($game, null, true));
     }
 
+    /** Enregistre la réponse du joueur connecté à la question en cours. */
     #[Route('/{pin}/answers', name: 'api_live_answer', methods: ['POST'], requirements: ['pin' => '\d{6}'])]
     public function answer(string $pin, #[MapRequestPayload] LiveAnswerInput $input, #[CurrentUser] User $user): JsonResponse
     {
@@ -100,6 +103,7 @@ class LiveGameController extends AbstractController
         return $this->json($this->normalizer->state($game, $player, false));
     }
 
+    /** Arrête la partie (réservé à l'animateur). */
     #[Route('/{pin}', name: 'api_live_stop', methods: ['DELETE'], requirements: ['pin' => '\d{6}'])]
     public function stop(string $pin, #[CurrentUser] User $user): JsonResponse
     {
@@ -116,11 +120,13 @@ class LiveGameController extends AbstractController
         return $this->json($this->normalizer->state($game, null, true));
     }
 
+    /** Indique si le compte connecté anime la partie. */
     private function isHost(LiveGame $game, User $user): bool
     {
         return $game->getHost()->getId() === $user->getId();
     }
 
+    /** Réponse 404 quand aucune partie ne correspond au code PIN. */
     private function notFound(): JsonResponse
     {
         return $this->json(['error' => 'Aucune partie avec ce code PIN.'], 404);

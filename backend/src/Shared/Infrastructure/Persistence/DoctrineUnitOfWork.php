@@ -8,6 +8,7 @@ use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 
+/** Implémentation Doctrine de l'unité de travail. */
 #[AsAlias(UnitOfWork::class)]
 class DoctrineUnitOfWork implements UnitOfWork
 {
@@ -15,6 +16,7 @@ class DoctrineUnitOfWork implements UnitOfWork
     {
     }
 
+    /** Écrit en base les changements en attente, et traduit une violation d'unicité en exception métier. */
     public function flush(): void
     {
         try {
@@ -24,6 +26,7 @@ class DoctrineUnitOfWork implements UnitOfWork
         }
     }
 
+    /** Exécute l'opération dans une transaction Doctrine. */
     public function transactional(callable $operation): mixed
     {
         return $this->em->wrapInTransaction($operation);

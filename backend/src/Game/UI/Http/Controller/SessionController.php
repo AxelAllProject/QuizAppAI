@@ -15,6 +15,7 @@ use Symfony\Component\HttpKernel\Attribute\MapQueryString;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
+/** Routes de lecture des parties solo : classement d'un quiz, historique, détail. */
 #[Route('/api')]
 class SessionController extends AbstractController
 {
@@ -43,6 +44,7 @@ class SessionController extends AbstractController
         return $this->json($this->summaries($this->sessions->findHistory($all ? null : $user)));
     }
 
+    /** Affiche le détail d'une partie, si elle appartient au compte connecté (ou pour un admin). */
     #[Route('/sessions/{id}', name: 'api_session_show', methods: ['GET'], requirements: ['id' => '\d+'])]
     public function show(int $id): JsonResponse
     {

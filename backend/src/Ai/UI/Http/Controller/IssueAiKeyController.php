@@ -14,6 +14,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
+/** Route admin de création d'une clé IA. */
 #[IsGranted('ROLE_ADMIN', message: 'Réservé aux administrateurs.')]
 class IssueAiKeyController extends AbstractController
 {

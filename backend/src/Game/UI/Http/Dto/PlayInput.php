@@ -4,6 +4,7 @@ namespace App\Game\UI\Http\Dto;
 
 use Symfony\Component\Validator\Constraints as Assert;
 
+/** Réponses envoyées à la fin d'une partie solo, avec la durée de jeu. */
 class PlayInput
 {
     /**

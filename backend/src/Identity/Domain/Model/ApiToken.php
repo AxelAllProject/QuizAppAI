@@ -37,6 +37,7 @@ class ApiToken
         $this->expiresAt = new \DateTimeImmutable(self::LIFETIME);
     }
 
+    // Accesseurs : lecture et modification des champs de l'entité.
     public function getId(): ?int
     {
         return $this->id;

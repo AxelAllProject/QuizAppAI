@@ -9,6 +9,7 @@ use App\Shared\Application\AdminKeyGenerator;
 use App\Shared\Application\UnitOfWork;
 use Psr\Clock\ClockInterface;
 
+/** Crée une clé IA depuis le back-office. */
 class IssueAiKey
 {
     public function __construct(
@@ -43,6 +44,7 @@ class IssueAiKey
         return $key;
     }
 
+    /** Tire des codes au hasard jusqu'à en trouver un qui n'existe pas encore. */
     private function uniqueValue(): string
     {
         do {

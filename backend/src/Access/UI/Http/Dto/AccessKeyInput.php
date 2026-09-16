@@ -5,6 +5,7 @@ namespace App\Access\UI\Http\Dto;
 use App\Access\Domain\Model\AccessKey;
 use Symfony\Component\Validator\Constraints as Assert;
 
+/** Données envoyées pour créer une clé d'accès (rôle, étiquette, compte, expiration). */
 class AccessKeyInput
 {
     public function __construct(

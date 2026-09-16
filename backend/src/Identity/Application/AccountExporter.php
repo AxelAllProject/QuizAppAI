@@ -18,6 +18,7 @@ class AccountExporter
     ) {
     }
 
+    /** Rassemble le compte et les sections exportées par chaque contexte. */
     public function export(User $user): array
     {
         $export = [

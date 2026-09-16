@@ -4,6 +4,7 @@ namespace App\Ai\Application\Dto;
 
 use Symfony\Component\Validator\Constraints as Assert;
 
+/** Demande de génération par IA : sujet, nombre de questions et de réponses, difficulté. */
 class GenerateQuizInput
 {
     public function __construct(

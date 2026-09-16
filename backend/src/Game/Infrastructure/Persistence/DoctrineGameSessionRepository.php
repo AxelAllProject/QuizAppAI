@@ -19,6 +19,7 @@ class DoctrineGameSessionRepository extends ServiceEntityRepository implements G
         parent::__construct($registry, GameSession::class);
     }
 
+    /** Récupère une partie par son identifiant. */
     public function ofId(int $id): ?GameSession
     {
         return $this->find($id);
@@ -115,6 +116,7 @@ class DoctrineGameSessionRepository extends ServiceEntityRepository implements G
         return array_slice($rows, 0, $limit);
     }
 
+    /** Compte les parties, bonnes réponses et questions de chaque compte, en une requête GROUP BY. */
     public function statsByUser(array $users): array
     {
         if ([] === $users) {
@@ -138,6 +140,7 @@ class DoctrineGameSessionRepository extends ServiceEntityRepository implements G
         return $stats;
     }
 
+    /** Calcule en base les totaux du tableau de bord (parties, joueurs, score, questions). */
     public function globalStats(): array
     {
         $row = $this->createQueryBuilder('s')
@@ -148,6 +151,7 @@ class DoctrineGameSessionRepository extends ServiceEntityRepository implements G
         return array_map(intval(...), $row);
     }
 
+    /** Supprime toutes les parties d'un compte, en une requête. */
     public function deleteByUser(User $user): void
     {
         $this->createQueryBuilder('s')
@@ -158,6 +162,7 @@ class DoctrineGameSessionRepository extends ServiceEntityRepository implements G
             ->execute();
     }
 
+    /** Prépare l'enregistrement d'une nouvelle partie. */
     public function add(GameSession $gameSession): void
     {
         $this->getEntityManager()->persist($gameSession);

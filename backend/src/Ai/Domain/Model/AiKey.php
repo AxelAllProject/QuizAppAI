@@ -62,6 +62,7 @@ class AiKey
         $this->createdAt = new \DateTimeImmutable();
     }
 
+    // Accesseurs : lecture et modification des champs de l'entité.
     public function getId(): ?int
     {
         return $this->id;
@@ -128,6 +129,7 @@ class AiKey
         return $this->revokedAt;
     }
 
+    /** Révoque la clé : elle ne permet plus de générer (la première date de révocation est conservée). */
     public function revoke(): self
     {
         $this->revokedAt ??= new \DateTimeImmutable();
@@ -135,16 +137,19 @@ class AiKey
         return $this;
     }
 
+    /** Indique si la clé a été révoquée. */
     public function isRevoked(): bool
     {
         return null !== $this->revokedAt;
     }
 
+    /** Indique si la date d'expiration est dépassée à l'instant donné. */
     public function isExpired(\DateTimeImmutable $now): bool
     {
         return null !== $this->expiresAt && $this->expiresAt <= $now;
     }
 
+    /** Indique s'il ne reste plus aucune génération. */
     public function isExhausted(): bool
     {
         return $this->remainingGenerations <= 0;
@@ -165,6 +170,7 @@ class AiKey
         return $this->redeemedAt;
     }
 
+    /** Indique si la clé est déjà liée à un autre compte que celui-ci. */
     public function isRedeemedBySomeoneElse(User $user): bool
     {
         return null !== $this->redeemedBy && $this->redeemedBy->getId() !== $user->getId();
@@ -182,6 +188,7 @@ class AiKey
         return $this;
     }
 
+    /** Décompte une génération, sans descendre sous zéro. */
     public function consume(): self
     {
         if ($this->remainingGenerations > 0) {

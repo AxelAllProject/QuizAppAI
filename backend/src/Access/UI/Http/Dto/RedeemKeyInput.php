@@ -4,6 +4,7 @@ namespace App\Access\UI\Http\Dto;
 
 use Symfony\Component\Validator\Constraints as Assert;
 
+/** Clé d'accès saisie dans « Mon compte ». */
 class RedeemKeyInput
 {
     public function __construct(

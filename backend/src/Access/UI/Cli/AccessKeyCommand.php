@@ -12,6 +12,7 @@ use Symfony\Component\Console\Attribute\Option;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
+/** Commande console pour créer ou lister les clés d'accès. */
 #[AsCommand(name: 'app:access-key', description: "Crée ou liste les clés d'accès (prof / admin)")]
 class AccessKeyCommand
 {
@@ -22,6 +23,7 @@ class AccessKeyCommand
     ) {
     }
 
+    /** Crée une clé pour le rôle demandé, ou liste les clés existantes sans argument. */
     public function __invoke(
         SymfonyStyle $io,
         #[Argument(description: 'Rôle accordé par la clé : prof ou admin')]
@@ -62,6 +64,7 @@ class AccessKeyCommand
         return Command::SUCCESS;
     }
 
+    /** Affiche toutes les clés dans un tableau avec leur état. */
     private function list(SymfonyStyle $io): int
     {
         $keys = $this->keys->findAllOrdered();

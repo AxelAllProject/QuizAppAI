@@ -13,6 +13,7 @@ class AccessKeyPersonalData implements PersonalDataEraser
     {
     }
 
+    /** Anonymise les clés d'accès créées ou reçues par le compte supprimé. */
     public function erase(User $user): void
     {
         $this->keys->anonymizeUser($user, self::ANONYMOUS);

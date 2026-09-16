@@ -4,8 +4,10 @@ namespace App\Game\Application;
 
 use App\Game\Domain\Model\GameSession;
 
+/** Transforme une partie solo en tableau JSON. */
 class SessionNormalizer
 {
+    /** Renvoie le résumé d'une partie (score, précision, durée), avec la correction détaillée si demandé. */
     public function session(GameSession $session, bool $withDetail = true): array
     {
         $payload = [

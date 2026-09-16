@@ -17,6 +17,7 @@ class AccessKeyFixtures extends Fixture implements DependentFixtureInterface, Fi
     public const ADMIN_KEY = '2MZL-SEPP-F67F-9TGN';
     public const TEACHER_KEY = '6YW5-4X49-2FFX-NB5P';
 
+    /** Enregistre les clés de démonstration. */
     public function load(ObjectManager $manager): void
     {
         $keys = [
@@ -36,6 +37,7 @@ class AccessKeyFixtures extends Fixture implements DependentFixtureInterface, Fi
         $manager->flush();
     }
 
+    /** Construit une clé de démonstration avec son code, son rôle et son étiquette. */
     private function key(string $value, string $role, string $label): AccessKey
     {
         return (new AccessKey())
@@ -45,11 +47,13 @@ class AccessKeyFixtures extends Fixture implements DependentFixtureInterface, Fi
             ->setCreatedBy('fixtures');
     }
 
+    /** Fixtures à charger avant celles-ci. */
     public function getDependencies(): array
     {
         return [UserFixtures::class];
     }
 
+    /** Groupes permettant de charger ces fixtures seules (--group=access-keys). */
     public static function getGroups(): array
     {
         return ['demo', 'access-keys'];

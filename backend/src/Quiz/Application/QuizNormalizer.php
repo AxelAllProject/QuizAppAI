@@ -4,6 +4,7 @@ namespace App\Quiz\Application;
 
 use App\Quiz\Domain\Model\Quiz;
 
+/** Transforme un quiz en tableau JSON (carte de bibliothèque ou détail). */
 class QuizNormalizer
 {
     /** Vue « carte » utilisée dans la bibliothèque de quiz. */

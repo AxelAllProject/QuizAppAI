@@ -18,6 +18,7 @@ class LiveGameNormalizer
     {
     }
 
+    /** Construit l'état de la partie vu par l'animateur ou par un joueur. */
     public function state(LiveGame $game, ?LivePlayer $me, bool $isHost): array
     {
         $status = $game->getStatus();

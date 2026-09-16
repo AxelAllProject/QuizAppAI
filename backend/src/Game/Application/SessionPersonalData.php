@@ -19,6 +19,7 @@ class SessionPersonalData implements PersonalDataExporter, PersonalDataEraser
     ) {
     }
 
+    /** Exporte toutes les parties solo du compte. */
     public function export(User $user): array
     {
         return ['sessions' => array_map(
@@ -27,6 +28,7 @@ class SessionPersonalData implements PersonalDataExporter, PersonalDataEraser
         )];
     }
 
+    /** Supprime toutes les parties solo du compte. */
     public function erase(User $user): void
     {
         $this->sessions->deleteByUser($user);

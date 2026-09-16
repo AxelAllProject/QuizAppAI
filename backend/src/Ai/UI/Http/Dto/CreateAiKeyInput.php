@@ -4,6 +4,7 @@ namespace App\Ai\UI\Http\Dto;
 
 use Symfony\Component\Validator\Constraints as Assert;
 
+/** Données envoyées pour créer une clé IA (quota, étiquette, expiration, compte). */
 class CreateAiKeyInput
 {
     public function __construct(
