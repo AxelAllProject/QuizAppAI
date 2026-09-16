@@ -8,7 +8,7 @@ security:
 
     providers:
         app_users:
-            entity: { class: App\Entity\User, property: email }
+            entity: { class: App\Identity\Domain\Model\User, property: email }
 
     firewalls:
         dev:
@@ -21,7 +21,7 @@ security:
             stateless: true
             provider: app_users
             access_token:
-                token_handler: App\Security\ApiTokenHandler
+                token_handler: App\Identity\Infrastructure\Security\ApiTokenHandler
 
     # Note: Only the *first* matching rule is applied
     access_control:

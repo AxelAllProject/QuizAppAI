@@ -2,9 +2,9 @@
 
 namespace App\Tests;
 
-use App\DataFixtures\AccessKeyFixtures;
-use App\DataFixtures\AiKeyFixtures;
-use App\DataFixtures\UserFixtures;
+use App\Access\Infrastructure\DataFixtures\AccessKeyFixtures;
+use App\Ai\Infrastructure\DataFixtures\AiKeyFixtures;
+use App\Identity\Infrastructure\DataFixtures\UserFixtures;
 use Doctrine\Common\DataFixtures\Executor\ORMExecutor;
 use Doctrine\Common\DataFixtures\Purger\ORMPurger;
 use Doctrine\ORM\EntityManagerInterface;

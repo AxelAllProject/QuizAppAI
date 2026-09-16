@@ -11,13 +11,44 @@ doctrine:
         validate_xml_mapping: true
         naming_strategy: doctrine.orm.naming_strategy.underscore
         auto_mapping: true
+        # Un mapping par bounded context : les entités vivent dans <Contexte>/Domain/Model.
         mappings:
-            App:
+            Identity:
                 type: attribute
                 is_bundle: false
-                dir: '%kernel.project_dir%/src/Entity'
-                prefix: 'App\Entity'
-                alias: App
+                dir: '%kernel.project_dir%/src/Identity/Domain/Model'
+                prefix: 'App\Identity\Domain\Model'
+                alias: Identity
+            Quiz:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Quiz/Domain/Model'
+                prefix: 'App\Quiz\Domain\Model'
+                alias: Quiz
+            Game:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Game/Domain/Model'
+                prefix: 'App\Game\Domain\Model'
+                alias: Game
+            Live:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Live/Domain/Model'
+                prefix: 'App\Live\Domain\Model'
+                alias: Live
+            Access:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Access/Domain/Model'
+                prefix: 'App\Access\Domain\Model'
+                alias: Access
+            Ai:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Ai/Domain/Model'
+                prefix: 'App\Ai\Domain\Model'
+                alias: Ai
 
 when@test:
     doctrine:

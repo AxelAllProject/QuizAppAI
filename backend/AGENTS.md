@@ -16,6 +16,28 @@ If you can't ask (no interactive channel), state the assumption you're making an
 pick the smallest option (e.g. no persistence layer) rather than scaffolding a
 full stack nobody asked for.
 
+## Architecture (DDD)
+
+`src/` is split into bounded contexts: `Identity` (accounts, auth, GDPR), `Quiz`
+(authoring), `Game` (solo sessions), `Live` (live games), `Access` (access keys),
+`Ai` (AI keys and generation), plus `Shared`. Each context has the same layers:
+
+- `Domain/Model`: entities (Doctrine mapping attributes are allowed here),
+  `Domain/Repository`: repository **interfaces**, `Domain/Exception`.
+- `Application`: use-case services, normalizers, input DTOs shared by several
+  entry points (e.g. `QuizInput`), ports such as `AiQuizGenerator`.
+- `Infrastructure`: Doctrine repositories (`Doctrine*Repository`, aliased to the
+  domain interface with `#[AsAlias]`), security (voters, token handler), external
+  APIs (Groq), storage, fixtures.
+- `UI/Http` (controllers + request DTOs) and `UI/Cli` (commands).
+
+Rules: Domain and Application never use `EntityManagerInterface` or other Doctrine
+services; they go through repository interfaces and `Shared\Application\UnitOfWork`
+(`flush()`, `transactional()`). Repository interfaces use `ofId()`/`countAll()`
+rather than `find()`/`count()`, which clash with `ServiceEntityRepository`. A new
+entity goes in `<Context>/Domain/Model`, which `config/packages/doctrine.yaml` maps
+per context.
+
 ## Adding features: Flex, not hand-wiring
 
 Install new capabilities with `composer require <package>` (e.g. `symfony/lock`,
