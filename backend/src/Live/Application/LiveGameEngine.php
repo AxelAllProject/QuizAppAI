@@ -9,9 +9,7 @@ use App\Live\Domain\Exception\LiveGameException;
 use App\Live\Domain\Model\LiveAnswer;
 use App\Live\Domain\Model\LiveGame;
 use App\Live\Domain\Model\LivePlayer;
-use App\Live\Domain\Repository\LiveGameRepository;
 use App\Quiz\Domain\Model\Question;
-use App\Quiz\Domain\Model\Quiz;
 use App\Shared\Application\UnitOfWork;
 use App\Shared\Domain\Exception\DuplicateEntryException;
 use Psr\Clock\ClockInterface;
@@ -33,23 +31,9 @@ class LiveGameEngine
 
     public function __construct(
         private readonly UnitOfWork $unitOfWork,
-        private readonly LiveGameRepository $games,
         private readonly GameSessionRepository $sessions,
         private readonly ClockInterface $clock,
     ) {
-    }
-
-    public function create(Quiz $quiz, User $host): LiveGame
-    {
-        do {
-            $pin = sprintf('%06d', random_int(0, 999_999));
-        } while ($this->games->isPinInUse($pin));
-
-        $game = new LiveGame($pin, $quiz, $host);
-        $this->games->add($game);
-        $this->unitOfWork->flush();
-
-        return $game;
     }
 
     public function join(LiveGame $game, User $user): LivePlayer

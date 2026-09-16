@@ -16,7 +16,7 @@ class SessionGrader
     /**
      * @param array<int|string, mixed> $given index de réponse choisi, par identifiant de question
      *
-     * La session n'est pas persistée : c'est à l'appelant de l'enregistrer.
+     * La session n'est pas persistée : c'est à l'appelant de l'enregistrer
      */
     public function grade(Quiz $quiz, array $given, string $player, ?User $user, ?int $durationSeconds = null): GameSession
     {

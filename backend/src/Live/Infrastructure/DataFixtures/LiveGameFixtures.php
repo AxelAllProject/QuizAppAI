@@ -4,6 +4,7 @@ namespace App\Live\Infrastructure\DataFixtures;
 
 use App\Identity\Domain\Model\User;
 use App\Identity\Infrastructure\DataFixtures\UserFixtures;
+use App\Live\Application\CreateLiveGame;
 use App\Live\Application\LiveGameEngine;
 use App\Live\Domain\Model\LiveGame;
 use App\Quiz\Domain\Model\Quiz;
@@ -23,8 +24,10 @@ class LiveGameFixtures extends Fixture implements DependentFixtureInterface, Fix
     /** joueur => nombre de bonnes réponses sur le quiz « Culture générale express » */
     private const FINISHED_GAME_PLAYERS = ['lea' => 4, 'hugo' => 3, 'nina' => 2, 'tom' => 1];
 
-    public function __construct(private readonly LiveGameEngine $engine)
-    {
+    public function __construct(
+        private readonly LiveGameEngine $engine,
+        private readonly CreateLiveGame $createLiveGame,
+    ) {
     }
 
     public function load(ObjectManager $manager): void
@@ -35,7 +38,7 @@ class LiveGameFixtures extends Fixture implements DependentFixtureInterface, Fix
 
     private function playFinishedGame(): void
     {
-        $game = $this->engine->create($this->quiz('culture'), $this->user('mme.martin'));
+        $game = $this->createLiveGame->create($this->quiz('culture'), $this->user('mme.martin'));
         $players = [];
 
         foreach (self::FINISHED_GAME_PLAYERS as $username => $correctCount) {
@@ -60,7 +63,7 @@ class LiveGameFixtures extends Fixture implements DependentFixtureInterface, Fix
 
     private function openLobby(): void
     {
-        $game = $this->engine->create($this->quiz('web'), $this->user('m.durand'));
+        $game = $this->createLiveGame->create($this->quiz('web'), $this->user('m.durand'));
 
         foreach (['sarah', 'nina'] as $username) {
             $this->engine->join($game, $this->user($username));

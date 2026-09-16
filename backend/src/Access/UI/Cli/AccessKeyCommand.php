@@ -2,10 +2,9 @@
 
 namespace App\Access\UI\Cli;
 
+use App\Access\Application\IssueAccessKey;
 use App\Access\Domain\Model\AccessKey;
 use App\Access\Domain\Repository\AccessKeyRepository;
-use App\Shared\Application\AdminKeyGenerator;
-use App\Shared\Application\UnitOfWork;
 use Psr\Clock\ClockInterface;
 use Symfony\Component\Console\Attribute\Argument;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -18,8 +17,7 @@ class AccessKeyCommand
 {
     public function __construct(
         private readonly AccessKeyRepository $keys,
-        private readonly AdminKeyGenerator $generator,
-        private readonly UnitOfWork $unitOfWork,
+        private readonly IssueAccessKey $issueAccessKey,
         private readonly ClockInterface $clock,
     ) {
     }
@@ -51,18 +49,7 @@ class AccessKeyCommand
             return Command::INVALID;
         }
 
-        $key = (new AccessKey())
-            ->setValue($this->generator->generate())
-            ->setRole($role)
-            ->setLabel($label)
-            ->setCreatedBy('console');
-
-        if (null !== $expires) {
-            $key->setExpiresAt($this->clock->now()->modify(sprintf('+%d days', $expires)));
-        }
-
-        $this->keys->add($key);
-        $this->unitOfWork->flush();
+        $key = $this->issueAccessKey->issue($role, $label, $expires, null, 'console');
 
         $io->success(sprintf('Clé %s créée.', $role));
         $io->definitionList(

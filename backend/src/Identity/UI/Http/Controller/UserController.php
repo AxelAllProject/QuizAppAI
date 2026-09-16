@@ -5,7 +5,6 @@ namespace App\Identity\UI\Http\Controller;
 use App\Game\Domain\Repository\GameSessionRepository;
 use App\Identity\Domain\Model\User;
 use App\Identity\Domain\Repository\UserRepository;
-use App\Identity\Infrastructure\Security\CurrentUser;
 use App\Identity\UI\Http\Dto\RoleInput;
 use App\Identity\UI\Http\Dto\UserFilter;
 use App\Shared\Application\UnitOfWork;
@@ -14,6 +13,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Attribute\MapQueryString;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /**
@@ -27,7 +27,6 @@ class UserController extends AbstractController
     public function __construct(
         private readonly UserRepository $users,
         private readonly GameSessionRepository $sessions,
-        private readonly CurrentUser $identity,
         private readonly UnitOfWork $unitOfWork,
     ) {
     }
@@ -35,37 +34,23 @@ class UserController extends AbstractController
     #[Route('', name: 'api_user_list', methods: ['GET'])]
     public function list(#[MapQueryString] UserFilter $filter = new UserFilter()): JsonResponse
     {
-        $stats = [];
-
-        foreach ($this->sessions->findHistory(null, 1000) as $session) {
-            if (!$userId = $session->getUser()?->getId()) {
-                continue;
-            }
-
-            $entry = $stats[$userId] ?? ['games' => 0, 'score' => 0, 'total' => 0];
-            ++$entry['games'];
-            $entry['score'] += $session->getScore();
-            $entry['total'] += $session->getTotal();
-            $stats[$userId] = $entry;
-        }
+        $users = $this->users->search($filter->search, $filter->role);
+        // Statistiques agrégées en base, pour les seuls comptes affichés.
+        $stats = $this->sessions->statsByUser($users);
 
         return $this->json(array_map(
             fn (User $user) => $this->normalize($user, $stats[$user->getId()] ?? null),
-            $this->users->search($filter->search, $filter->role),
+            $users,
         ));
     }
 
     /** Retirer un rôle : une clé révoquée n'enlève pas les droits déjà accordés, ceci si. */
     #[Route('/{id}/role', name: 'api_user_role', methods: ['PUT'], requirements: ['id' => '\d+'])]
-    public function changeRole(int $id, #[MapRequestPayload] RoleInput $input): JsonResponse
+    public function changeRole(int $id, #[MapRequestPayload] RoleInput $input, #[CurrentUser] User $admin): JsonResponse
     {
-        $user = $this->users->ofId($id);
+        $user = $this->users->ofId($id) ?? throw $this->createNotFoundException('Compte introuvable.');
 
-        if (!$user) {
-            return $this->json(['error' => 'Compte introuvable.'], 404);
-        }
-
-        if ($user->getId() === $this->identity->user()->getId() && User::ROLE_ADMIN !== $input->role) {
+        if ($user->getId() === $admin->getId() && User::ROLE_ADMIN !== $input->role) {
             return $this->json(['error' => 'Tu ne peux pas retirer tes propres droits d’administrateur.'], 409);
         }
 

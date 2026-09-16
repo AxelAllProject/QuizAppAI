@@ -8,24 +8,19 @@ use App\Quiz\Domain\Repository\QuizRepository;
 use App\Shared\Application\UnitOfWork;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(name: 'app:seed', description: 'Charge quelques quiz de démonstration')]
-class SeedCommand extends Command
+class SeedCommand
 {
     public function __construct(
         private readonly UnitOfWork $unitOfWork,
         private readonly QuizRepository $quizzes,
     ) {
-        parent::__construct();
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output): int
+    public function __invoke(SymfonyStyle $io): int
     {
-        $io = new SymfonyStyle($input, $output);
-
         foreach ($this->demoQuizzes() as $data) {
             if ($this->quizzes->findOneByTitle($data['title'])) {
                 $io->text(sprintf('« %s » existe déjà, ignoré.', $data['title']));

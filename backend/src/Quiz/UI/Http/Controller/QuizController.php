@@ -2,46 +2,41 @@
 
 namespace App\Quiz\UI\Http\Controller;
 
-use App\Game\Domain\Repository\GameSessionRepository;
-use App\Identity\Infrastructure\Security\CurrentUser;
-use App\Live\Domain\Repository\LiveGameRepository;
+use App\Identity\Domain\Model\User;
+use App\Quiz\Application\DeleteQuiz;
 use App\Quiz\Application\Dto\QuizInput;
 use App\Quiz\Application\QuizNormalizer;
 use App\Quiz\Application\QuizWriter;
 use App\Quiz\Domain\Model\Quiz;
 use App\Quiz\Domain\Repository\QuizRepository;
 use App\Quiz\Infrastructure\Security\QuizVoter;
-use App\Shared\Application\UnitOfWork;
+use App\Quiz\UI\Http\Dto\QuizDetailQuery;
+use App\Quiz\UI\Http\Dto\QuizFilter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Attribute\MapQueryString;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/api')]
 class QuizController extends AbstractController
 {
+    private const NOT_OWNER = 'Ce quiz a été rédigé par quelqu\'un d\'autre.';
+
     public function __construct(
         private readonly QuizRepository $quizzes,
-        private readonly GameSessionRepository $sessions,
-        private readonly LiveGameRepository $liveGames,
-        private readonly UnitOfWork $unitOfWork,
-        private readonly CurrentUser $identity,
         private readonly QuizNormalizer $normalizer,
         private readonly QuizWriter $writer,
+        private readonly DeleteQuiz $deleteQuiz,
     ) {
     }
 
     #[Route('/quizzes', name: 'api_quiz_list', methods: ['GET'])]
-    public function list(Request $request): JsonResponse
+    public function list(#[CurrentUser] User $user, #[MapQueryString] QuizFilter $filter = new QuizFilter()): JsonResponse
     {
-        $mine = $request->query->getBoolean('mine');
-        $found = $this->quizzes->search(
-            $request->query->get('search'),
-            $request->query->get('category'),
-            $mine ? $this->identity->user() : null,
-        );
+        $found = $this->quizzes->search($filter->search, $filter->category, $filter->mine ? $user : null);
 
         return $this->json(array_map(
             fn (Quiz $quiz) => $this->normalizer->summary($quiz) + ['canEdit' => $this->isGranted(QuizVoter::EDIT, $quiz)],
@@ -56,26 +51,21 @@ class QuizController extends AbstractController
     }
 
     #[Route('/quizzes/{id}', name: 'api_quiz_show', methods: ['GET'], requirements: ['id' => '\d+'])]
-    public function show(int $id, Request $request): JsonResponse
+    public function show(int $id, #[MapQueryString] QuizDetailQuery $query = new QuizDetailQuery()): JsonResponse
     {
-        $quiz = $this->quizzes->ofId($id);
-
-        if (!$quiz) {
-            return $this->json(['error' => 'Quiz introuvable.'], 404);
-        }
-
+        $quiz = $this->find($id);
         $canEdit = $this->isGranted(QuizVoter::EDIT, $quiz);
         // Les bonnes réponses ne sortent que pour l'édition, jamais pour jouer.
-        $withAnswers = $request->query->getBoolean('withAnswers') && $canEdit;
+        $withAnswers = $query->withAnswers && $canEdit;
 
         return $this->json($this->normalizer->detail($quiz, $withAnswers) + ['canEdit' => $canEdit]);
     }
 
     #[Route('/quizzes', name: 'api_quiz_create', methods: ['POST'])]
     #[IsGranted('ROLE_TEACHER', message: 'Il faut être professeur ou administrateur pour créer un quiz.')]
-    public function create(#[MapRequestPayload] QuizInput $input): JsonResponse
+    public function create(#[MapRequestPayload] QuizInput $input, #[CurrentUser] User $user): JsonResponse
     {
-        $quiz = $this->writer->create($input, $this->identity->user(), $this->identity->name());
+        $quiz = $this->writer->create($input, $user, $user->getUsername());
 
         return $this->json($this->normalizer->detail($quiz, true) + ['canEdit' => true], 201);
     }
@@ -83,40 +73,31 @@ class QuizController extends AbstractController
     #[Route('/quizzes/{id}', name: 'api_quiz_update', methods: ['PUT'], requirements: ['id' => '\d+'])]
     public function update(int $id, #[MapRequestPayload] QuizInput $input): JsonResponse
     {
-        $quiz = $this->quizzes->ofId($id);
-
-        if (!$quiz) {
-            return $this->json(['error' => 'Quiz introuvable.'], 404);
-        }
+        $quiz = $this->find($id);
 
         if (!$this->isGranted(QuizVoter::EDIT, $quiz)) {
-            return $this->json(['error' => 'Ce quiz a été rédigé par quelqu\'un d\'autre.'], 403);
+            return $this->json(['error' => self::NOT_OWNER], 403);
         }
 
-        $quiz = $this->writer->update($quiz, $input);
-
-        return $this->json($this->normalizer->detail($quiz, true) + ['canEdit' => true]);
+        return $this->json($this->normalizer->detail($this->writer->update($quiz, $input), true) + ['canEdit' => true]);
     }
 
     #[Route('/quizzes/{id}', name: 'api_quiz_delete', methods: ['DELETE'], requirements: ['id' => '\d+'])]
     public function delete(int $id): JsonResponse
     {
-        $quiz = $this->quizzes->ofId($id);
-
-        if (!$quiz) {
-            return $this->json(['error' => 'Quiz introuvable.'], 404);
-        }
+        $quiz = $this->find($id);
 
         if (!$this->isGranted(QuizVoter::EDIT, $quiz)) {
-            return $this->json(['error' => 'Ce quiz a été rédigé par quelqu\'un d\'autre.'], 403);
+            return $this->json(['error' => self::NOT_OWNER], 403);
         }
 
-        // SQLite n'applique pas les clés étrangères : on détache et on nettoie à la main.
-        $this->sessions->detachQuiz($quiz);
-        $this->liveGames->removeForQuiz($quiz);
-        $this->quizzes->remove($quiz);
-        $this->unitOfWork->flush();
+        $this->deleteQuiz->delete($quiz);
 
         return new JsonResponse(null, 204);
+    }
+
+    private function find(int $id): Quiz
+    {
+        return $this->quizzes->ofId($id) ?? throw $this->createNotFoundException('Quiz introuvable.');
     }
 }

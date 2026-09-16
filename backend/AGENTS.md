@@ -38,6 +38,21 @@ rather than `find()`/`count()`, which clash with `ServiceEntityRepository`. A ne
 entity goes in `<Context>/Domain/Model`, which `config/packages/doctrine.yaml` maps
 per context.
 
+- **At most 4 constructor dependencies per class** (services, repositories, scalar
+  `#[Autowire]` parameters all count). Past that, extract a use case into
+  `Application` or split the controller (single-action `__invoke` controllers are
+  fine). Don't dodge the limit by injecting services into action arguments.
+- Get the logged-in account with `#[CurrentUser] User $user` on the action, and check
+  roles with `$this->isGranted()`. Object-level rights go in a voter
+  (`QuizVoter`, `GameSessionVoter`).
+- Missing resources: `$repo->ofId($id) ?? throw $this->createNotFoundException('…')`;
+  `ApiExceptionListener` turns it into a JSON 404.
+- Query strings go through a DTO with `#[MapQueryString]`, never `$request->query`.
+- Aggregates and counters are computed in SQL, not by loading rows into PHP.
+- Operations that must succeed together run in `UnitOfWork::transactional()`.
+- GDPR: a context that stores personal data implements `PersonalDataExporter` and/or
+  `PersonalDataEraser` (autoconfigured tags); Identity never queries other contexts.
+
 ## Adding features: Flex, not hand-wiring
 
 Install new capabilities with `composer require <package>` (e.g. `symfony/lock`,
@@ -111,8 +126,8 @@ a controller or a service call for a service, not just "it didn't throw."
 ## Code style
 
 Symfony's coding standard, the `@Symfony` php-cs-fixer ruleset (a PSR-12-derived
-superset). Run `vendor/bin/php-cs-fixer fix` if `friendsofphp/php-cs-fixer` is
-installed; it isn't part of the skeleton by default.
+superset). `friendsofphp/php-cs-fixer` is installed: run `vendor/bin/php-cs-fixer fix`
+(config in `.php-cs-fixer.dist.php`).
 
 ## Discover, don't guess
 

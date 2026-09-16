@@ -34,6 +34,18 @@ interface GameSessionRepository
      */
     public function leaderboard(int $limit = 10): array;
 
+    /**
+     * Parties, bonnes réponses et questions par compte, agrégées en base.
+     *
+     * @param User[] $users
+     *
+     * @return array<int, array{games: int, score: int, total: int}> par identifiant de compte
+     */
+    public function statsByUser(array $users): array;
+
+    /** @return array{sessionCount: int, playerCount: int, score: int, total: int} */
+    public function globalStats(): array;
+
     public function deleteByUser(User $user): void;
 
     public function add(GameSession $session): void;

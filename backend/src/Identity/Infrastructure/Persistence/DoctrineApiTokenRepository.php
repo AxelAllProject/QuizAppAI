@@ -7,14 +7,17 @@ use App\Identity\Domain\Model\User;
 use App\Identity\Domain\Repository\ApiTokenRepository;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Psr\Clock\ClockInterface;
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 
 /** @extends ServiceEntityRepository<ApiToken> */
 #[AsAlias(ApiTokenRepository::class)]
 class DoctrineApiTokenRepository extends ServiceEntityRepository implements ApiTokenRepository
 {
-    public function __construct(ManagerRegistry $registry)
-    {
+    public function __construct(
+        ManagerRegistry $registry,
+        private readonly ClockInterface $clock,
+    ) {
         parent::__construct($registry, ApiToken::class);
     }
 
@@ -37,7 +40,7 @@ class DoctrineApiTokenRepository extends ServiceEntityRepository implements ApiT
             ->andWhere('t.tokenHash = :hash')
             ->andWhere('t.expiresAt > :now')
             ->setParameter('hash', self::hash($plain))
-            ->setParameter('now', new \DateTimeImmutable())
+            ->setParameter('now', $this->clock->now())
             ->getQuery()
             ->getOneOrNullResult();
     }
@@ -57,7 +60,7 @@ class DoctrineApiTokenRepository extends ServiceEntityRepository implements ApiT
         return $this->createQueryBuilder('t')
             ->delete()
             ->andWhere('t.expiresAt <= :now')
-            ->setParameter('now', new \DateTimeImmutable())
+            ->setParameter('now', $this->clock->now())
             ->getQuery()
             ->execute();
     }

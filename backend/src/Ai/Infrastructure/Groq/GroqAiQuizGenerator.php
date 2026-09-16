@@ -93,9 +93,7 @@ class GroqAiQuizGenerator implements AiQuizGenerator
 
             $outputText = $response->toArray()['choices'][0]['message']['content'] ?? null;
         } catch (ClientException $exception) {
-            throw 429 === $exception->getResponse()->getStatusCode()
-                ? new AiGenerationException('Quota gratuit de génération épuisé pour l’instant : réessaie dans quelques minutes.', 503)
-                : new AiGenerationException('L’IA n’a pas pu générer de quiz : ' . $this->apiErrorMessage($exception), 502);
+            throw 429 === $exception->getResponse()->getStatusCode() ? new AiGenerationException('Quota gratuit de génération épuisé pour l’instant : réessaie dans quelques minutes.', 503) : new AiGenerationException('L’IA n’a pas pu générer de quiz : '.$this->apiErrorMessage($exception), 502);
         } catch (TransportExceptionInterface) {
             throw new AiGenerationException('Impossible de joindre le service de génération par IA.', 503);
         }

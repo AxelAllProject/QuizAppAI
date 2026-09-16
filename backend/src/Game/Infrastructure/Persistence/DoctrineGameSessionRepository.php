@@ -115,6 +115,39 @@ class DoctrineGameSessionRepository extends ServiceEntityRepository implements G
         return array_slice($rows, 0, $limit);
     }
 
+    public function statsByUser(array $users): array
+    {
+        if ([] === $users) {
+            return [];
+        }
+
+        $rows = $this->createQueryBuilder('s')
+            ->select('IDENTITY(s.user) AS userId, COUNT(s.id) AS games, SUM(s.score) AS score, SUM(s.total) AS total')
+            ->andWhere('s.user IN (:users)')
+            ->setParameter('users', $users)
+            ->groupBy('s.user')
+            ->getQuery()
+            ->getArrayResult();
+
+        $stats = [];
+
+        foreach ($rows as $row) {
+            $stats[(int) $row['userId']] = ['games' => (int) $row['games'], 'score' => (int) $row['score'], 'total' => (int) $row['total']];
+        }
+
+        return $stats;
+    }
+
+    public function globalStats(): array
+    {
+        $row = $this->createQueryBuilder('s')
+            ->select('COUNT(s.id) AS sessionCount, COUNT(DISTINCT s.player) AS playerCount, COALESCE(SUM(s.score), 0) AS score, COALESCE(SUM(s.total), 0) AS total')
+            ->getQuery()
+            ->getSingleResult();
+
+        return array_map(intval(...), $row);
+    }
+
     public function deleteByUser(User $user): void
     {
         $this->createQueryBuilder('s')
