@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="frontend/public/banner.svg" alt="QuizLab — des quiz corrigés et expliqués, à faire seul ou en direct avec toute la classe" width="100%">
+
 # 🧠 QuizLab
 
 **Quiz illustrés, parties solo chronométrées et parties en direct façon Kahoot**
@@ -321,6 +323,7 @@ projet/
 │   └── tests/               PHPUnit — API (WebTestCase) + tests unitaires rangés par contexte
 ├── frontend/                 React 19 + Vite
 │   ├── Dockerfile            image de dev Node 24
+│   ├── public/               favicon.svg, banner.svg (bannière du README)
 │   └── src/
 │       ├── pages/            routes de l'app (Library, Editor, LiveHost…)
 │       │   └── admin/         back-office (vue d'ensemble, comptes, clés, parties)
