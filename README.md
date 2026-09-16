@@ -43,7 +43,7 @@ nouveaux défis, auteurs). Thème clair façon cahier, polices **Fredoka** /
 
 | Couche | Techno | Détail |
 |---|---|---|
-| **Backend** | Symfony 8.1 / PHP 8.4 | API JSON, contrôleurs fins, DTO + `#[MapRequestPayload]`, Validator |
+| **Backend** | Symfony 8.1 / PHP 8.4 | API JSON, architecture DDD par bounded context, DTO + `#[MapRequestPayload]`, Validator |
 | **Persistance** | Doctrine ORM 3.7 + SQLite | migrations Doctrine, pas de SQL à la main |
 | **Auth** | Symfony Security | jeton Bearer (empreinte SHA-256), rôle relu en base à chaque requête |
 | **IA** | API Groq (compatible OpenAI) | génération de quiz, `symfony/http-client`, quota par clé + rate limiter |
@@ -61,21 +61,47 @@ flowchart LR
     end
 
     subgraph Server["Symfony 8 (:8000)"]
-        API["Contrôleurs API JSON"]
-        SEC["Security\n(jeton Bearer → rôle relu en base)"]
-        SVC["Services\n(LiveGameEngine, QuizWriter, AiQuizGenerator…)"]
-        ORM["Doctrine ORM"]
+        UI["UI\n(contrôleurs HTTP, commandes CLI)"]
+        SEC["Security\n(jeton Bearer → rôle relu en base, voters)"]
+        APP["Application\n(QuizWriter, LiveGameEngine, AccountEraser…)"]
+        DOM["Domain\n(entités, interfaces de repository)"]
+        INFRA["Infrastructure\n(repositories Doctrine, UnitOfWork, client Groq)"]
     end
 
     DB[("SQLite\nvar/quiz_*.db")]
     GROQ["API Groq\n(génération IA, optionnelle)"]
     UP["backend/public/uploads\n(images de quiz)"]
 
-    SPA -- "fetch + Authorization: Bearer" --> API
-    API --> SEC --> SVC --> ORM --> DB
-    SVC -. "si GROQ_API_KEY définie" .-> GROQ
-    API --> UP
+    SPA -- "fetch + Authorization: Bearer" --> UI
+    UI --> SEC
+    UI --> APP --> DOM
+    INFRA -. "implémente" .-> DOM
+    INFRA --> DB
+    INFRA -. "si GROQ_API_KEY définie" .-> GROQ
+    INFRA --> UP
 ```
+
+Le backend suit une architecture **DDD** : le code est découpé en **bounded
+contexts**, chacun organisé en quatre couches.
+
+| Contexte | Périmètre |
+|---|---|
+| `Identity` | comptes, inscription / connexion, jetons, annuaire admin, RGPD (export, effacement, purge) |
+| `Quiz` | rédaction des quiz, questions, images, droits d'édition (`QuizVoter`) |
+| `Game` | parties solo : correction, historique, classements, statistiques |
+| `Live` | parties en direct : PIN, déroulé, points, podium |
+| `Access` | clés d'accès professeur / administrateur |
+| `Ai` | clés IA et génération de quiz (port `AiQuizGenerator`, adaptateur Groq) |
+| `Shared` | `UnitOfWork`, générateur de clés, gestion des erreurs JSON |
+
+| Couche | Contenu | Règle |
+|---|---|---|
+| `Domain` | entités, interfaces de repository, exceptions métier | aucune dépendance aux services Doctrine (seuls les attributs de mapping) |
+| `Application` | cas d'usage, normalizers, DTO partagés | passe par les interfaces de repository et `UnitOfWork`, jamais par l'`EntityManager` |
+| `Infrastructure` | repositories Doctrine, sécurité, API Groq, stockage, fixtures | implémente les interfaces du domaine (`#[AsAlias]`) |
+| `UI` | contrôleurs HTTP + DTO de requête, commandes CLI | fins : valident l'entrée, délèguent, formatent la réponse |
+
+Les règles détaillées pour contribuer sont dans [`backend/AGENTS.md`](backend/AGENTS.md).
 
 Pas de WebSocket pour les parties en direct : les écrans interrogent l'état
 **toutes les secondes**. Simple, sans service supplémentaire, largement
@@ -261,16 +287,16 @@ Toutes les routes sauf `register`, `login` et `logout` demandent
 projet/
 ├── backend/                 Symfony 8 — API JSON
 │   ├── src/
-│   │   ├── Controller/      routes API (fines, déléguent aux services)
-│   │   ├── Service/         logique métier (LiveGameEngine, AiQuizGenerator, QuizWriter…)
-│   │   ├── Entity/          Doctrine (User, Quiz, LiveGame, AccessKey, AiKey…)
-│   │   ├── Dto/             payloads validés (#[MapRequestPayload])
-│   │   ├── Repository/      requêtes Doctrine
-│   │   ├── Security/        authentification par jeton
-│   │   ├── DataFixtures/    données de démo, une fixture par fonctionnalité
-│   │   └── Command/         commandes CLI (app:seed, app:access-key…)
+│   │   ├── Identity/        comptes, auth, RGPD
+│   │   ├── Quiz/            rédaction des quiz, images
+│   │   ├── Game/            parties solo, classements
+│   │   ├── Live/            parties en direct
+│   │   ├── Access/          clés d'accès prof / admin
+│   │   ├── Ai/              clés IA, génération Groq
+│   │   └── Shared/          UnitOfWork, erreurs JSON, générateur de clés
+│   │       (dans chaque contexte : Domain/ · Application/ · Infrastructure/ · UI/)
 │   ├── migrations/          schéma versionné (Doctrine Migrations)
-│   └── tests/               PHPUnit — API, RGPD, sécurité, IA, parties en direct
+│   └── tests/               PHPUnit — API (WebTestCase) + tests unitaires rangés par contexte
 ├── frontend/                 React 19 + Vite
 │   └── src/
 │       ├── pages/            routes de l'app (Library, Editor, LiveHost…)
