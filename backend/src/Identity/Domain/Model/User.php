@@ -13,6 +13,8 @@ use Symfony\Component\Security\Core\User\UserInterface;
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'app_user')]
+// Annuaire trié par dernière connexion, purge des comptes inactifs.
+#[ORM\Index(fields: ['lastSeenAt'])]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     public const ROLE_PLAYER = 'user';
@@ -21,7 +23,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public const ROLES = [self::ROLE_PLAYER, self::ROLE_TEACHER, self::ROLE_ADMIN];
 
     /** Version de la politique de confidentialité acceptée à l'inscription. */
-    public const PRIVACY_POLICY_VERSION = '2026-09-10';
+    public const PRIVACY_POLICY_VERSION = '2026-09-16';
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -33,6 +35,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(length: 60, unique: true)]
     private string $username = '';
+
+    /**
+     * Pseudo en minuscules, unique en base : « Axel » et « axel » ne peuvent pas coexister,
+     * même avec deux inscriptions simultanées (l'index unique sur `username` distingue la casse).
+     */
+    #[ORM\Column(length: 60, unique: true)]
+    private string $usernameCanonical = '';
 
     #[ORM\Column]
     private string $password = '';
@@ -84,8 +93,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setUsername(string $username): self
     {
         $this->username = trim($username);
+        $this->usernameCanonical = self::canonicalize($username);
 
         return $this;
+    }
+
+    /** Forme de comparaison d'un pseudo : sans espaces autour, en minuscules (accents compris). */
+    public static function canonicalize(string $username): string
+    {
+        return mb_strtolower(trim($username));
     }
 
     public function getUserIdentifier(): string

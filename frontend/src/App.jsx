@@ -1,6 +1,7 @@
+import { Suspense } from 'react'
 import { Link, NavLink, Navigate, Outlet, useLocation } from 'react-router-dom'
 import Brand from './components/Brand'
-import { Avatar } from './components/ui'
+import { Avatar, Loader } from './components/ui'
 import { useAuth } from './auth'
 
 /** Libellé affiché pour chaque rôle dans l'en-tête. */
@@ -50,7 +51,10 @@ export default function App() {
       </header>
 
       <main>
-        <Outlet />
+        {/* Pages chargées à la demande (voir main.jsx) : l'en-tête reste affiché pendant le chargement. */}
+        <Suspense fallback={<div className="page"><Loader count={1} /></div>}>
+          <Outlet />
+        </Suspense>
       </main>
 
       <footer className="site-footer">

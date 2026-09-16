@@ -8,7 +8,7 @@ use App\Quiz\Domain\Model\Quiz;
 class QuizNormalizer
 {
     /** Vue « carte » utilisée dans la bibliothèque de quiz. */
-    public function summary(Quiz $quiz): array
+    public function summary(Quiz $quiz, ?int $questionCount = null): array
     {
         return [
             'id' => $quiz->getId(),
@@ -18,7 +18,8 @@ class QuizNormalizer
             'difficulty' => $quiz->getDifficulty(),
             'coverImage' => $quiz->getCoverImage(),
             'author' => $quiz->getAuthor(),
-            'questionCount' => $quiz->getQuestions()->count(),
+            // Fourni par l'appelant quand il liste plusieurs quiz : évite de charger les questions de chacun.
+            'questionCount' => $questionCount ?? $quiz->getQuestions()->count(),
             'createdAt' => $quiz->getCreatedAt()->format(\DateTimeInterface::ATOM),
         ];
     }

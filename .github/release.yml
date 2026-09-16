@@ -1,0 +1,15 @@
+# Catégories des notes de version générées automatiquement (selon les labels des pull requests).
+changelog:
+  categories:
+    - title: 💥 Changements incompatibles
+      labels: [breaking]
+    - title: ✨ Nouveautés
+      labels: [feature, enhancement]
+    - title: 🐛 Corrections
+      labels: [bug, fix]
+    - title: 🔒 Sécurité
+      labels: [security]
+    - title: 🧹 Maintenance
+      labels: [chore, dependencies, documentation]
+    - title: Autres changements
+      labels: ["*"]

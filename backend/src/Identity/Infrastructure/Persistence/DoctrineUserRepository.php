@@ -4,6 +4,7 @@ namespace App\Identity\Infrastructure\Persistence;
 
 use App\Identity\Domain\Model\User;
 use App\Identity\Domain\Repository\UserRepository;
+use App\Shared\Infrastructure\Persistence\LikePattern;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
@@ -38,12 +39,8 @@ class DoctrineUserRepository extends ServiceEntityRepository implements UserRepo
     /** « Axel » et « axel » ne peuvent pas coexister : on s'y tromperait dans un classement. */
     public function isUsernameTaken(string $username): bool
     {
-        return (bool) $this->createQueryBuilder('u')
-            ->select('COUNT(u.id)')
-            ->andWhere('LOWER(u.username) = :name')
-            ->setParameter('name', mb_strtolower(trim($username)))
-            ->getQuery()
-            ->getSingleScalarResult();
+        // Colonne dédiée plutôt que LOWER() en SQL : SQLite ne met en minuscules que l'ASCII (« É » resterait « É »).
+        return $this->count(['usernameCanonical' => User::canonicalize($username)]) > 0;
     }
 
     /**
@@ -59,8 +56,8 @@ class DoctrineUserRepository extends ServiceEntityRepository implements UserRepo
             ->addOrderBy('u.id', 'DESC');
 
         if (null !== $term && '' !== trim($term)) {
-            $qb->andWhere('LOWER(u.username) LIKE :term')
-                ->setParameter('term', '%'.mb_strtolower(trim($term)).'%');
+            $qb->andWhere(sprintf('LOWER(u.username) LIKE :term %1$s', LikePattern::ESCAPE))
+                ->setParameter('term', LikePattern::contains($term));
         }
 
         if (null !== $role) {

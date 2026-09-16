@@ -9,6 +9,8 @@ use Doctrine\ORM\Mapping as ORM;
  * stockée : une fuite de la base ne permet pas de se faire passer pour quelqu'un.
  */
 #[ORM\Entity]
+// Purge des jetons expirés.
+#[ORM\Index(fields: ['expiresAt'])]
 class ApiToken
 {
     /** Au-delà, il faut se reconnecter (durée de conservation limitée). */

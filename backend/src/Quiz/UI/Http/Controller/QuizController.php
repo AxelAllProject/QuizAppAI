@@ -39,9 +39,10 @@ class QuizController extends AbstractController
     public function list(#[CurrentUser] User $user, #[MapQueryString] QuizFilter $filter = new QuizFilter()): JsonResponse
     {
         $found = $this->quizzes->search($filter->search, $filter->category, $filter->mine ? $user : null);
+        $questionCounts = $this->quizzes->countQuestions($found);
 
         return $this->json(array_map(
-            fn (Quiz $quiz) => $this->normalizer->summary($quiz) + ['canEdit' => $this->isGranted(QuizVoter::EDIT, $quiz)],
+            fn (Quiz $quiz) => $this->normalizer->summary($quiz, $questionCounts[$quiz->getId()] ?? 0) + ['canEdit' => $this->isGranted(QuizVoter::EDIT, $quiz)],
             $found,
         ));
     }

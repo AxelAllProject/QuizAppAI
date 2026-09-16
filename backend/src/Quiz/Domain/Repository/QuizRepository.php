@@ -20,6 +20,15 @@ interface QuizRepository
     /** @return Quiz[] */
     public function search(?string $term, ?string $category, ?User $owner): array;
 
+    /**
+     * Nombre de questions de chaque quiz, en une requête : la bibliothèque n'a pas besoin des questions elles-mêmes.
+     *
+     * @param Quiz[] $quizzes
+     *
+     * @return array<int, int> nombre de questions, par identifiant de quiz
+     */
+    public function countQuestions(array $quizzes): array;
+
     /** @return string[] */
     public function findCategories(): array;
 

@@ -1,27 +1,15 @@
-import { useEffect, useState } from 'react'
-import { api } from '../api'
 import { useAuth } from '../auth'
 import { Medal } from './Icon'
-import { Avatar, ErrorBox, formatDate, formatDuration } from './ui'
+import { Avatar, formatDate, formatDuration } from './ui'
 
 /**
  * Classement des participants d'un quiz : visible par tout le monde,
- * aussi bien depuis la bibliothèque que juste après une partie.
- * La page parente peut fournir les parties déjà chargées via `sessions`.
+ * aussi bien depuis la page de classement que juste après une partie.
+ * La page parente charge les parties (null tant que le chargement est en cours) :
+ * le composant ne refait pas la requête de son côté.
  */
-export default function Ranking({ quizId, sessions: provided, highlightSessionId }) {
+export default function Ranking({ sessions, highlightSessionId }) {
   const { user } = useAuth()
-  const [fetched, setFetched] = useState(null)
-  const [error, setError] = useState(null)
-
-  useEffect(() => {
-    if (provided) return
-    api(`/api/quizzes/${quizId}/sessions`).then(setFetched).catch(setError)
-  }, [quizId, provided])
-
-  const sessions = provided ?? fetched
-
-  if (error) return <ErrorBox error={error} />
 
   if (!sessions) return <div className="skeleton" style={{ height: 120 }} />
 

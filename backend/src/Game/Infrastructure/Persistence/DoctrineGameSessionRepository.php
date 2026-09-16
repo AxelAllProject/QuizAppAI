@@ -89,31 +89,32 @@ class DoctrineGameSessionRepository extends ServiceEntityRepository implements G
             ->getResult();
     }
 
-    /** Classement : meilleur pourcentage par joueur. */
+    /**
+     * Classement général : taux de bonnes réponses de chaque joueur, puis nombre de parties.
+     * Tri et limite faits en base : seuls les $limit premiers joueurs sont lus, quel que soit
+     * le nombre de joueurs. Le tri se fait sur le taux exact (67,4 % passe devant 66,6 %).
+     */
     public function leaderboard(int $limit = 10): array
     {
         $rows = $this->createQueryBuilder('s')
             ->select('s.player AS player, COUNT(s.id) AS games, SUM(s.score) AS score, SUM(s.total) AS total')
+            ->addSelect('SUM(s.score) * 1.0 / SUM(s.total) AS HIDDEN ratio')
             ->groupBy('s.player')
+            ->having('SUM(s.total) > 0')
+            ->orderBy('ratio', 'DESC')
+            ->addOrderBy('games', 'DESC')
+            ->addOrderBy('s.player', 'ASC')
+            ->setMaxResults($limit)
             ->getQuery()
-            ->getResult();
+            ->getArrayResult();
 
-        $rows = array_map(static function (array $row): array {
-            $total = (int) $row['total'];
-            $score = (int) $row['score'];
-
-            return [
-                'player' => $row['player'],
-                'games' => (int) $row['games'],
-                'score' => $score,
-                'total' => $total,
-                'accuracy' => $total > 0 ? round($score / $total * 100) : 0,
-            ];
-        }, $rows);
-
-        usort($rows, static fn (array $a, array $b) => [$b['accuracy'], $b['games']] <=> [$a['accuracy'], $a['games']]);
-
-        return array_slice($rows, 0, $limit);
+        return array_map(static fn (array $row): array => [
+            'player' => $row['player'],
+            'games' => (int) $row['games'],
+            'score' => (int) $row['score'],
+            'total' => (int) $row['total'],
+            'accuracy' => (int) round($row['score'] / $row['total'] * 100),
+        ], $rows);
     }
 
     /** Compte les parties, bonnes réponses et questions de chaque compte, en une requête GROUP BY. */
@@ -149,6 +150,23 @@ class DoctrineGameSessionRepository extends ServiceEntityRepository implements G
             ->getSingleResult();
 
         return array_map(intval(...), $row);
+    }
+
+    /** Nombre de parties du joueur et moyenne de ses taux de réussite, calculés en base. */
+    public function summaryFor(User $user): array
+    {
+        $row = $this->createQueryBuilder('s')
+            ->select('COUNT(s.id) AS sessionCount')
+            ->addSelect('AVG(CASE WHEN s.total > 0 THEN s.score * 1.0 / s.total ELSE 0 END) AS ratio')
+            ->andWhere('s.user = :user')
+            ->setParameter('user', $user)
+            ->getQuery()
+            ->getSingleResult();
+
+        return [
+            'sessionCount' => (int) $row['sessionCount'],
+            'averageAccuracy' => null === $row['ratio'] ? null : (int) round($row['ratio'] * 100),
+        ];
     }
 
     /** Supprime toutes les parties d'un compte, en une requête. */

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import heroArt from '../assets/hero-study.svg'
@@ -22,43 +22,45 @@ export default function Library() {
   const [error, setError] = useState(null)
   const [history, setHistory] = useState([])
   const [stats, setStats] = useState(null)
+  // Nombre de parties et moyenne sur tout l'historique : /api/sessions n'en renvoie que les 50 dernières.
+  const [summary, setSummary] = useState(null)
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-
+  // Petit debounce pour ne pas requêter à chaque frappe. Une réponse arrivée après un
+  // changement de filtre est ignorée : elle écraserait la liste de la recherche en cours.
+  useEffect(() => {
+    let cancelled = false
     const params = new URLSearchParams()
     if (search.trim()) params.set('search', search.trim())
     if (category) params.set('category', category)
     if (onlyMine) params.set('mine', '1')
 
-    try {
-      const [list, cats] = await Promise.all([
-        api(`/api/quizzes?${params}`),
-        api('/api/categories'),
-      ])
-      setQuizzes(list)
-      setCategories(cats)
-    } catch (err) {
-      setError(err)
-    } finally {
-      setLoading(false)
+    const timer = setTimeout(() => {
+      setLoading(true)
+      setError(null)
+      api(`/api/quizzes?${params}`)
+        .then((list) => !cancelled && setQuizzes(list))
+        .catch((err) => !cancelled && setError(err))
+        .finally(() => !cancelled && setLoading(false))
+    }, 250)
+
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
     }
   }, [search, category, onlyMine])
 
-  // Petit debounce pour ne pas requêter à chaque frappe.
+  // Catégories, parcours et communauté ne dépendent pas des filtres : chargés une seule fois,
+  // ils enrichissent l'accueil sans le bloquer s'ils échouent.
   useEffect(() => {
-    const timer = setTimeout(load, 250)
-    return () => clearTimeout(timer)
-  }, [load])
-
-  // Parcours et communauté enrichissent l'accueil, sans le bloquer s'ils échouent.
-  useEffect(() => {
+    api('/api/categories').then(setCategories).catch(() => {})
     api('/api/sessions').then(setHistory).catch(() => {})
+    api('/api/sessions/summary').then(setSummary).catch(() => {})
     api('/api/stats').then(setStats).catch(() => {})
   }, [])
 
   const learning = useMemo(() => summarize(history), [history])
+  const playedCount = summary?.sessionCount ?? history.length
+  const average = summary ? summary.averageAccuracy : learning.average
 
   /** Lance une partie en direct sur ce quiz et ouvre l'écran de l'animateur. */
   async function host(quiz) {
@@ -99,11 +101,11 @@ export default function Library() {
 
           <div className="hero-stats">
             <div className="hero-stat">
-              <b>{history.length}</b>
-              <span>{history.length > 1 ? 'parties jouées' : 'partie jouée'}</span>
+              <b>{playedCount}</b>
+              <span>{playedCount > 1 ? 'parties jouées' : 'partie jouée'}</span>
             </div>
             <div className="hero-stat">
-              <b>{learning.average === null ? '—' : `${learning.average}%`}</b>
+              <b>{average === null ? '—' : `${average}%`}</b>
               <span>de réussite moyenne</span>
             </div>
             <div className="hero-stat">

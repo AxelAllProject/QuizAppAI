@@ -17,11 +17,8 @@ export default function Scores() {
     api(`/api/quizzes/${id}/sessions`).then(setSessions).catch(setError)
   }, [id])
 
-  // Le classement est déjà trié : la première partie de chaque joueur est sa meilleure.
-  const podium = useMemo(() => {
-    const seen = new Set()
-    return (sessions ?? []).filter((session) => !seen.has(session.player) && seen.add(session.player)).slice(0, 3)
-  }, [sessions])
+  // Le serveur renvoie déjà une seule partie par joueur (sa première), triée : les trois premières font le podium.
+  const podium = useMemo(() => (sessions ?? []).slice(0, 3), [sessions])
 
   return (
     <div className="page play-shell">
@@ -65,7 +62,7 @@ export default function Scores() {
       )}
 
       <div className="card">
-        <Ranking quizId={id} sessions={sessions ?? undefined} />
+        <Ranking sessions={sessions} />
       </div>
     </div>
   )

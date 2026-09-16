@@ -9,17 +9,26 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
 /** Question saisie dans l'éditeur (ou générée par l'IA), avec ses règles de validation. */
 class QuestionInput
 {
+    public const MAX_TEXT_LENGTH = 500;
+    public const MAX_CHOICE_LENGTH = 200;
+    public const MAX_EXPLANATION_LENGTH = 1000;
+
     public function __construct(
         #[Assert\NotBlank(message: 'L\'intitulé de la question est vide.')]
+        #[Assert\Length(max: self::MAX_TEXT_LENGTH, maxMessage: 'L\'intitulé ne doit pas dépasser {{ limit }} caractères.')]
         public readonly string $text = '',
 
         /** @var list<string> */
         #[Assert\Count(min: 2, max: 6, minMessage: 'Il faut au moins {{ limit }} réponses.', maxMessage: 'Pas plus de {{ limit }} réponses.')]
-        #[Assert\All([new Assert\NotBlank(message: 'Une réponse est vide.')])]
+        #[Assert\All([
+            new Assert\NotBlank(message: 'Une réponse est vide.'),
+            new Assert\Length(max: self::MAX_CHOICE_LENGTH, maxMessage: 'Une réponse ne doit pas dépasser {{ limit }} caractères.'),
+        ])]
         public readonly array $choices = [],
 
         public readonly int $correctIndex = 0,
 
+        #[Assert\Length(max: self::MAX_EXPLANATION_LENGTH, maxMessage: 'L\'explication ne doit pas dépasser {{ limit }} caractères.')]
         public readonly ?string $explanation = null,
 
         #[Assert\Regex(pattern: QuizImage::PATH_PATTERN, message: 'Image invalide : téléverse-la depuis l’éditeur.')]

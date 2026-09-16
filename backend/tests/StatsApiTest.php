@@ -23,6 +23,29 @@ class StatsApiTest extends ApiTestCase
         $this->assertSame(50, $stats['globalAccuracy']);
     }
 
+    public function testTheGeneralLeaderboardIsSortedByAccuracyThenGamesAndLimitedInSql(): void
+    {
+        $quizId = $this->createQuiz();
+
+        $this->play($quizId, 'bob', [1, 0]);   // 2/2
+        $this->play($quizId, 'chloe', [1, 1]); // 1/2
+        $this->play($quizId, 'chloe', [1, 0]); // 2/2 → 3/4
+        $this->play($quizId, 'dan', [1, 1]);   // 1/2
+        $this->play($quizId, 'dan', [1, 1]);   // 1/2 → 2/4, mais plus de parties qu'eve
+        $this->play($quizId, 'eve', [1, 1]);   // 1/2
+
+        $leaderboard = $this->request('GET', '/api/stats', as: 'bob')['leaderboard'];
+
+        $this->assertSame(['bob', 'chloe', 'dan', 'eve'], array_column($leaderboard, 'player'));
+        $this->assertSame([100, 75, 50, 50], array_column($leaderboard, 'accuracy'));
+        $this->assertSame(2, $leaderboard[2]['games']);
+
+        for ($i = 0; $i < 10; ++$i) {
+            $this->play($quizId, 'joueur'.$i, [0, 1]);
+        }
+        $this->assertCount(10, $this->request('GET', '/api/stats', as: 'bob')['leaderboard'], 'Le classement général ne garde que les 10 premiers.');
+    }
+
     public function testDashboardCountersStartAtZero(): void
     {
         $stats = $this->request('GET', '/api/stats', as: 'bob');

@@ -2,27 +2,21 @@
 
 namespace App\Identity\UI\Http\Controller;
 
-use App\Identity\Application\AccountEraser;
 use App\Identity\Application\AccountExporter;
 use App\Identity\Application\AccountNormalizer;
 use App\Identity\Domain\Model\User;
-use App\Identity\UI\Http\Dto\DeleteAccountInput;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
-/** « Mon compte » : consultation, export et suppression des données personnelles. */
+/** « Mon compte » : consultation et export des données personnelles (suppression : DeleteAccountController). */
 #[Route('/api/me')]
 class AccountController extends AbstractController
 {
     public function __construct(
         private readonly AccountNormalizer $accounts,
         private readonly AccountExporter $exporter,
-        private readonly AccountEraser $eraser,
-        private readonly UserPasswordHasherInterface $hasher,
     ) {
     }
 
@@ -42,18 +36,5 @@ class AccountController extends AbstractController
         $response->headers->set('Content-Disposition', 'attachment; filename="quizlab-mes-donnees.json"');
 
         return $response;
-    }
-
-    /** Supprime le compte connecté après vérification du mot de passe. */
-    #[Route('', name: 'api_me_delete', methods: ['DELETE'])]
-    public function delete(#[CurrentUser] User $user, #[MapRequestPayload] DeleteAccountInput $input): JsonResponse
-    {
-        if (!$this->hasher->isPasswordValid($user, $input->password)) {
-            return $this->json(['error' => 'Mot de passe incorrect.'], 403);
-        }
-
-        $this->eraser->erase($user);
-
-        return new JsonResponse(null, 204);
     }
 }

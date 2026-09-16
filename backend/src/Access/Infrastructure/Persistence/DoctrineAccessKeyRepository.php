@@ -5,6 +5,7 @@ namespace App\Access\Infrastructure\Persistence;
 use App\Access\Domain\Model\AccessKey;
 use App\Access\Domain\Repository\AccessKeyRepository;
 use App\Identity\Domain\Model\User;
+use App\Shared\Infrastructure\Persistence\LikePattern;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
@@ -84,8 +85,8 @@ class DoctrineAccessKeyRepository extends ServiceEntityRepository implements Acc
             ->addOrderBy('k.id', 'DESC');
 
         if (null !== $term && '' !== trim($term)) {
-            $qb->andWhere('LOWER(k.value) LIKE :term OR LOWER(k.label) LIKE :term OR LOWER(k.assignedToName) LIKE :term')
-                ->setParameter('term', '%'.mb_strtolower(trim($term)).'%');
+            $qb->andWhere(sprintf('LOWER(k.value) LIKE :term %1$s OR LOWER(k.label) LIKE :term %1$s OR LOWER(k.assignedToName) LIKE :term %1$s', LikePattern::ESCAPE))
+                ->setParameter('term', LikePattern::contains($term));
         }
 
         if (null !== $role) {

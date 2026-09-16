@@ -14,6 +14,8 @@ use Doctrine\ORM\Mapping as ORM;
  */
 #[ORM\Entity]
 #[ORM\Index(columns: ['pin'])]
+// Purge des parties de plus d'un jour.
+#[ORM\Index(fields: ['createdAt'])]
 class LiveGame
 {
     public const STATUS_LOBBY = 'lobby';

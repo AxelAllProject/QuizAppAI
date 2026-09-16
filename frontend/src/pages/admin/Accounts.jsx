@@ -10,7 +10,7 @@ import {
   Toolbar,
   useFilteredList,
 } from '../../components/admin'
-import { ErrorBox, formatDate } from '../../components/ui'
+import { Avatar, ErrorBox, formatDate } from '../../components/ui'
 
 /** Options du filtre par rôle. */
 const ROLES = [
@@ -54,7 +54,7 @@ export default function Accounts() {
       header: 'Compte',
       cell: (account) => (
         <span className="cell-identity">
-          <span className="avatar sm">{account.name.slice(0, 2).toUpperCase()}</span>
+          <Avatar name={account.name} size="sm" />
           {account.name}
         </span>
       ),

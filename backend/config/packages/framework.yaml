@@ -2,8 +2,8 @@
 framework:
     secret: '%env(APP_SECRET)%'
 
-    # Note that the session will be started ONLY if you read or write from it.
-    session: true
+    # API sans état (jeton Bearer, firewall stateless) : aucune session PHP, donc aucun cookie de session.
+    session: false
 
     #esi: true
     #fragments: true
@@ -11,5 +11,3 @@ framework:
 when@test:
     framework:
         test: true
-        session:
-            storage_factory_id: session.storage.factory.mock_file

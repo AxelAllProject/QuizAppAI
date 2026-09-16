@@ -44,6 +44,13 @@ class SessionController extends AbstractController
         return $this->json($this->summaries($this->sessions->findHistory($all ? null : $user)));
     }
 
+    /** Bilan du compte connecté sur toutes ses parties : l'historique ci-dessus n'en renvoie que 50. */
+    #[Route('/sessions/summary', name: 'api_session_summary', methods: ['GET'])]
+    public function summary(#[CurrentUser] User $user): JsonResponse
+    {
+        return $this->json($this->sessions->summaryFor($user));
+    }
+
     /** Affiche le détail d'une partie, si elle appartient au compte connecté (ou pour un admin). */
     #[Route('/sessions/{id}', name: 'api_session_show', methods: ['GET'], requirements: ['id' => '\d+'])]
     public function show(int $id): JsonResponse

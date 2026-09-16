@@ -3,8 +3,10 @@
 namespace App\Quiz\Infrastructure\Persistence;
 
 use App\Identity\Domain\Model\User;
+use App\Quiz\Domain\Model\Question;
 use App\Quiz\Domain\Model\Quiz;
 use App\Quiz\Domain\Repository\QuizRepository;
+use App\Shared\Infrastructure\Persistence\LikePattern;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
@@ -39,13 +41,14 @@ class DoctrineQuizRepository extends ServiceEntityRepository implements QuizRepo
     /** @return Quiz[] */
     public function search(?string $term, ?string $category, ?User $owner): array
     {
+        // Pas de jointure sur les questions : la bibliothèque n'affiche que leur nombre (countQuestions).
         $qb = $this->createQueryBuilder('q')
-            ->leftJoin('q.questions', 'question')->addSelect('question')
-            ->orderBy('q.createdAt', 'DESC');
+            ->orderBy('q.createdAt', 'DESC')
+            ->addOrderBy('q.id', 'DESC');
 
         if ($term) {
-            $qb->andWhere('LOWER(q.title) LIKE :term OR LOWER(q.description) LIKE :term')
-                ->setParameter('term', '%'.mb_strtolower($term).'%');
+            $qb->andWhere(sprintf('LOWER(q.title) LIKE :term %1$s OR LOWER(q.description) LIKE :term %1$s', LikePattern::ESCAPE))
+                ->setParameter('term', LikePattern::contains($term));
         }
 
         if ($category) {
@@ -57,6 +60,25 @@ class DoctrineQuizRepository extends ServiceEntityRepository implements QuizRepo
         }
 
         return $qb->getQuery()->getResult();
+    }
+
+    /** @return array<int, int> nombre de questions, par identifiant de quiz */
+    public function countQuestions(array $quizzes): array
+    {
+        if ([] === $quizzes) {
+            return [];
+        }
+
+        $rows = $this->getEntityManager()->createQueryBuilder()
+            ->select('IDENTITY(question.quiz) AS quizId, COUNT(question.id) AS questionCount')
+            ->from(Question::class, 'question')
+            ->andWhere('question.quiz IN (:quizzes)')
+            ->setParameter('quizzes', $quizzes)
+            ->groupBy('question.quiz')
+            ->getQuery()
+            ->getArrayResult();
+
+        return array_column(array_map(static fn (array $row) => [(int) $row['quizId'], (int) $row['questionCount']], $rows), 1, 0);
     }
 
     /** @return string[] */

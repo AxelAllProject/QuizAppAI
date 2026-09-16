@@ -5,6 +5,7 @@ namespace App\Ai\Infrastructure\Groq;
 use App\Ai\Application\AiQuizGenerator;
 use App\Ai\Application\Dto\GenerateQuizInput;
 use App\Ai\Domain\Exception\AiGenerationException;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpClient\Exception\ClientException;
@@ -14,7 +15,7 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 /**
  * Rédige un brouillon de quiz avec l'API Groq (gratuite, compatible OpenAI, quotée
  * en débit mais pas en volume). Cette classe ne fait que rédiger et nettoyer le
- * brouillon — c'est AiController qui le valide (mêmes règles qu'un quiz saisi à la
+ * brouillon — c'est GenerateQuiz qui le valide (mêmes règles qu'un quiz saisi à la
  * main) et le publie via QuizWriter.
  */
 #[AsAlias(AiQuizGenerator::class)]
@@ -60,6 +61,7 @@ class GroqAiQuizGenerator implements AiQuizGenerator
         private readonly string $apiKey,
         #[Autowire('%env(GROQ_MODEL)%')]
         private readonly string $model,
+        private readonly LoggerInterface $aiLogger,
     ) {
     }
 
@@ -94,12 +96,21 @@ class GroqAiQuizGenerator implements AiQuizGenerator
 
             $outputText = $response->toArray()['choices'][0]['message']['content'] ?? null;
         } catch (ClientException $exception) {
-            throw 429 === $exception->getResponse()->getStatusCode() ? new AiGenerationException('Quota gratuit de génération épuisé pour l’instant : réessaie dans quelques minutes.', 503) : new AiGenerationException('L’IA n’a pas pu générer de quiz : '.$this->apiErrorMessage($exception), 502);
-        } catch (TransportExceptionInterface) {
+            $status = $exception->getResponse()->getStatusCode();
+            // Le message de Groq peut révéler la configuration (modèle, clé, quota du compte) :
+            // il va dans le journal, le professeur reçoit un message générique.
+            $this->aiLogger->warning('Groq a refusé la génération ({status}) : {message}', ['status' => $status, 'message' => $this->apiErrorMessage($exception), 'model' => $this->model]);
+
+            throw 429 === $status ? new AiGenerationException('Quota gratuit de génération épuisé pour l’instant : réessaie dans quelques minutes.', 503) : new AiGenerationException('L’IA n’a pas pu générer de quiz : réessaie dans quelques instants.', 502);
+        } catch (TransportExceptionInterface $exception) {
+            $this->aiLogger->error('Groq injoignable : {message}', ['message' => $exception->getMessage()]);
+
             throw new AiGenerationException('Impossible de joindre le service de génération par IA.', 503);
         }
 
         if (!is_string($outputText)) {
+            $this->aiLogger->warning('Réponse Groq sans contenu texte.', ['model' => $this->model]);
+
             throw new AiGenerationException('Réponse inattendue du service de génération par IA.', 502);
         }
 
@@ -126,7 +137,11 @@ class GroqAiQuizGenerator implements AiQuizGenerator
      */
     private function sanitize(mixed $data, GenerateQuizInput $input): array
     {
-        $fail = static fn () => throw new AiGenerationException('L’IA a renvoyé un quiz inexploitable : réessaie, ou reformule le sujet.', 502);
+        $fail = function (): never {
+            $this->aiLogger->warning('Brouillon de quiz inexploitable renvoyé par Groq.', ['model' => $this->model]);
+
+            throw new AiGenerationException('L’IA a renvoyé un quiz inexploitable : réessaie, ou reformule le sujet.', 502);
+        };
 
         if (!is_array($data) || !is_string($data['title'] ?? null) || '' === trim($data['title'])) {
             $fail();

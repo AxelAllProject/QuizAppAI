@@ -1,28 +1,41 @@
-import { StrictMode } from 'react'
+import { StrictMode, lazy } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import App from './App'
 import { AuthProvider, useAuth } from './auth'
 import Account from './pages/Account'
-import AccessKeysPage from './pages/admin/AccessKeysPage'
-import Accounts from './pages/admin/Accounts'
-import AdminLayout from './pages/admin/AdminLayout'
-import AiKeysPage from './pages/admin/AiKeysPage'
-import Games from './pages/admin/Games'
-import Overview from './pages/admin/Overview'
 import Community from './pages/Community'
-import Editor from './pages/Editor'
 import History from './pages/History'
 import Join from './pages/Join'
 import Library from './pages/Library'
-import LiveHost from './pages/LiveHost'
 import LivePlayer from './pages/LivePlayer'
 import Login from './pages/Login'
 import Play from './pages/Play'
 import Privacy from './pages/Privacy'
 import Result from './pages/Result'
 import Scores from './pages/Scores'
+// Polices servies par l'application elle-même (sous-ensemble latin) : aucune requête vers Google Fonts,
+// qui recevrait sinon l'adresse IP de chaque visiteur (voir la page Confidentialité).
+import '@fontsource/fredoka/latin-500.css'
+import '@fontsource/fredoka/latin-600.css'
+import '@fontsource/fredoka/latin-700.css'
+import '@fontsource/plus-jakarta-sans/latin-400.css'
+import '@fontsource/plus-jakarta-sans/latin-500.css'
+import '@fontsource/plus-jakarta-sans/latin-600.css'
+import '@fontsource/plus-jakarta-sans/latin-700.css'
+import '@fontsource/plus-jakarta-sans/latin-800.css'
 import './styles.css'
+
+// Back-office, éditeur et écran d'animation ne servent qu'aux professeurs et admins :
+// chargés à la demande, ils n'alourdissent pas la première visite d'un élève.
+const AccessKeysPage = lazy(() => import('./pages/admin/AccessKeysPage'))
+const Accounts = lazy(() => import('./pages/admin/Accounts'))
+const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'))
+const AiKeysPage = lazy(() => import('./pages/admin/AiKeysPage'))
+const Games = lazy(() => import('./pages/admin/Games'))
+const Overview = lazy(() => import('./pages/admin/Overview'))
+const Editor = lazy(() => import('./pages/Editor'))
+const LiveHost = lazy(() => import('./pages/LiveHost'))
 
 /** Le back-office n'a de sens que pour un admin. */
 function AdminOnly({ children }) {

@@ -48,6 +48,13 @@ interface GameSessionRepository
     /** @return array{sessionCount: int, playerCount: int, score: int, total: int} */
     public function globalStats(): array;
 
+    /**
+     * Bilan d'un joueur sur toutes ses parties (l'historique, lui, s'arrête aux plus récentes).
+     *
+     * @return array{sessionCount: int, averageAccuracy: int|null} moyenne des taux de réussite, null sans partie
+     */
+    public function summaryFor(User $user): array;
+
     /** Supprime toutes les parties d'un compte. */
     public function deleteByUser(User $user): void;
 

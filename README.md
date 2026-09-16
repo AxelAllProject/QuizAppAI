@@ -6,6 +6,7 @@
 
 **Quiz illustrés, parties solo chronométrées et parties en direct façon Kahoot**
 
+[![Release](https://img.shields.io/github/v/release/AxelAllProject/QuizAppAI?include_prereleases&label=version)](https://github.com/AxelAllProject/QuizAppAI/releases)
 [![PHP](https://img.shields.io/badge/PHP-8.4-777BB4?logo=php&logoColor=white)](https://www.php.net/)
 [![Symfony](https://img.shields.io/badge/Symfony-8.1-000000?logo=symfony&logoColor=white)](https://symfony.com/)
 [![React](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)](https://react.dev/)
@@ -39,6 +40,7 @@ nouveaux défis, auteurs). Thème clair façon cahier, polices **Fredoka** /
 - [API](#api)
 - [Structure du dépôt](#structure-du-dépôt)
 - [Tests](#tests)
+- [Versions](#versions)
 - [À suivre](#à-suivre)
 
 ## Stack technique
@@ -51,7 +53,8 @@ nouveaux défis, auteurs). Thème clair façon cahier, polices **Fredoka** /
 | **IA** | API Groq (compatible OpenAI) | génération de quiz, `symfony/http-client`, quota par clé + rate limiter |
 | **Frontend** | React 19 + Vite 8 | SPA, `react-router-dom` 7 |
 | **Lint** | oxlint | frontend |
-| **Tests** | PHPUnit 13 | `WebTestCase` (fonctionnel HTTP) / `KernelTestCase` (service) |
+| **Tests** | PHPUnit 13 + Vitest 5 | backend : `WebTestCase` (fonctionnel HTTP) / `TestCase` (service) ; frontend : fonctions pures |
+| **Journaux** | Monolog (`symfony/monolog-bundle`) | canaux `audit` (actions sensibles de l'API) et `ai` (erreurs Groq) |
 | **CORS** | `nelmio/cors-bundle` | origines `localhost` / `127.0.0.1` en dev |
 | **Conteneurs** | Docker Compose | une image backend (PHP 8.4), une image frontend (Node 24), lancées ensemble |
 
@@ -243,11 +246,11 @@ aucune fuite de l'adresse IP des joueurs.
 | Principe | Mise en œuvre |
 |---|---|
 | **Information et consentement** | page **Confidentialité** (`/confidentialite`), case obligatoire à l'inscription, date/version enregistrées |
-| **Minimisation** | e-mail, pseudo, mot de passe haché, parties — pas de nom, pas de date de naissance, aucun service tiers |
+| **Minimisation** | e-mail, pseudo, mot de passe haché, parties — pas de nom, pas de date de naissance ; polices servies localement ; seul le sujet d'une génération IA part chez Groq |
 | **Accès et portabilité** | **Mon compte → Télécharger mes données** (JSON complet) |
 | **Effacement** | **Mon compte → Supprimer mon compte** : compte, jetons, historique effacés ; quiz anonymisés |
-| **Conservation** | jetons 30 j ; parties en direct 24 h ; comptes inactifs 3 ans — via `app:rgpd:purge` |
-| **Sécurité** | mots de passe hachés, jetons en empreinte SHA-256, rôles vérifiés côté serveur |
+| **Conservation** | jetons 30 j ; parties en direct 24 h ; comptes inactifs 3 ans — via `app:rgpd:purge` ; journal de sécurité 6 mois (à régler chez l'hébergeur) |
+| **Sécurité** | mots de passe hachés, jetons en empreinte SHA-256, rôles vérifiés côté serveur, limites de débit, en-têtes HTTP de sécurité, journal d'audit sans mot de passe ni e-mail |
 
 ```bash
 php bin/console app:rgpd:purge            # --dry-run pour voir ce qui serait supprimé
@@ -269,7 +272,7 @@ Toutes les routes sauf `register`, `login` et `logout` demandent
 | POST | `/api/register` | e-mail, pseudo, mot de passe, consentement (+ clé d'accès) → jeton |
 | POST | `/api/login` | e-mail + mot de passe → jeton |
 | POST | `/api/logout` | révoque le jeton |
-| GET / DELETE | `/api/me` | mon compte / suppression (mot de passe requis) |
+| GET / DELETE | `/api/me` | mon compte / suppression (mot de passe requis, 5 échecs / 15 min) |
 | POST | `/api/me/access-key` | saisir une clé d'accès |
 | GET | `/api/me/export` | export de mes données (JSON) |
 | GET | `/api/quizzes` | liste, filtres `search`, `category`, `mine` |
@@ -285,7 +288,7 @@ Toutes les routes sauf `register`, `login` et `logout` demandent
 | GET | `/api/quizzes/{id}/sessions` | classement des participants du quiz |
 | POST | `/api/live-games` | créer une partie en direct (**prof / admin**) |
 | GET | `/api/live-games/{pin}` | état de la partie (animateur ou joueur inscrit) |
-| POST | `/api/live-games/{pin}/join` | rejoindre |
+| POST | `/api/live-games/{pin}/join` | rejoindre (10 PIN inconnus / 10 min par compte, sur toutes les routes live) |
 | POST | `/api/live-games/{pin}/next` | étape suivante (**animateur**) |
 | POST | `/api/live-games/{pin}/answers` | répondre à la question en cours |
 | DELETE | `/api/live-games/{pin}` | arrêter la partie (**animateur**) |
@@ -293,7 +296,8 @@ Toutes les routes sauf `register`, `login` et `logout` demandent
 | PUT | `/api/users/{id}/role` | changer un rôle (**admin**) |
 | GET / POST | `/api/access-keys` | lister (filtres `search`, `role`, `status`) / générer une clé, avec `expiresInDays` facultatif (**admin**) |
 | DELETE | `/api/access-keys/{id}` | révoquer une clé (**admin**) |
-| GET | `/api/sessions` | historique (`?all=1` pour un admin) |
+| GET | `/api/sessions` | historique, 50 dernières parties (`?all=1` pour un admin) |
+| GET | `/api/sessions/summary` | nombre de parties et réussite moyenne du compte, sur tout l'historique |
 | GET | `/api/sessions/{id}` | détail d'une session |
 | GET | `/api/stats` | compteurs + classement |
 
@@ -313,7 +317,7 @@ projet/
 │   │   ├── Live/            parties en direct
 │   │   ├── Access/          clés d'accès prof / admin
 │   │   ├── Ai/              clés IA, génération Groq
-│   │   └── Shared/          UnitOfWork, erreurs JSON, générateur de clés
+│   │   └── Shared/          UnitOfWork, erreurs JSON, en-têtes de sécurité, journal d'audit, générateur de clés
 │   │       (dans chaque contexte : Domain/ · Application/ · Infrastructure/ · UI/)
 │   ├── migrations/          schéma versionné (Doctrine Migrations)
 │   └── tests/               PHPUnit — API (WebTestCase) + tests unitaires rangés par contexte
@@ -329,9 +333,34 @@ projet/
 ## Tests
 
 ```bash
-cd backend && php bin/phpunit   # comptes et RGPD, sécurité, rôles, quiz et images, parties en direct, IA
-cd frontend && npm run lint && npm run build
+cd backend && php bin/phpunit   # comptes et RGPD, sécurité, rôles, quiz et images, parties en direct, IA, journaux
+cd frontend && npm test && npm run lint && npm run build   # Vitest : fonctions de progression et de formatage
 ```
+
+Journaux en développement : `backend/var/log/dev.log` (tout) et `backend/var/log/audit_dev.log`
+(actions sensibles de l'API et erreurs de l'IA).
+
+## Versions
+
+QuizLab suit le [versionnage sémantique](https://semver.org/lang/fr/) `MAJEUR.MINEUR.CORRECTIF` :
+
+| Changement | Exemple |
+|---|---|
+| **Majeur** : incompatible (API, données, parcours) | `1.4.2` → `2.0.0` |
+| **Mineur** : nouvelle fonctionnalité compatible | `1.4.2` → `1.5.0` |
+| **Correctif** : correction de bug | `1.4.2` → `1.4.3` |
+
+Chaque version est un tag `vX.Y.Z` sur `main`, publié dans les
+[Releases](https://github.com/AxelAllProject/QuizAppAI/releases) avec ses notes et le frontend compilé.
+
+```bash
+# 1. mettre à jour "version" dans frontend/package.json, commit sur main
+# 2. taguer et pousser : le workflow Release lance les tests puis publie la version
+git tag -a v1.0.0 -m "QuizLab 1.0.0"
+git push origin v1.0.0
+```
+
+Un tag avec suffixe (`v1.1.0-beta.1`) est publié comme pré-version.
 
 ## À suivre
 

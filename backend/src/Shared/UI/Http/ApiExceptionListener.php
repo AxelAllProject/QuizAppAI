@@ -32,7 +32,10 @@ class ApiExceptionListener
             $status = 422;
         }
 
-        $event->setResponse(new JsonResponse($payload, $status));
+        // Les en-têtes portés par l'exception (Retry-After d'une 429, Allow d'une 405…) sont conservés.
+        $headers = $exception instanceof HttpExceptionInterface ? $exception->getHeaders() : [];
+
+        $event->setResponse(new JsonResponse($payload, $status, $headers));
     }
 
     /** @return list<string> */

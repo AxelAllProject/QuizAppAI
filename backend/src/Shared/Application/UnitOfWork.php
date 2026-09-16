@@ -2,6 +2,7 @@
 
 namespace App\Shared\Application;
 
+use App\Shared\Domain\Exception\ConcurrentModificationException;
 use App\Shared\Domain\Exception\DuplicateEntryException;
 
 /**
@@ -10,7 +11,10 @@ use App\Shared\Domain\Exception\DuplicateEntryException;
  */
 interface UnitOfWork
 {
-    /** @throws DuplicateEntryException si une contrainte d'unicité de la base refuse l'écriture */
+    /**
+     * @throws DuplicateEntryException         si une contrainte d'unicité de la base refuse l'écriture
+     * @throws ConcurrentModificationException si un agrégat versionné a été modifié entre-temps
+     */
     public function flush(): void;
 
     /**

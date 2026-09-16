@@ -151,8 +151,8 @@ export default function Result() {
             <div className="social-callout">
               <Icon name="award" size={18} />
               {rank === 1
-                ? `Meilleure partie de la classe sur ${ranking.length} jouées !`
-                : `${place(rank)} place sur ${ranking.length} parties jouées par la classe.`}
+                ? `Meilleur score de la classe sur ${ranking.length} joueurs !`
+                : `${place(rank)} place sur ${ranking.length} joueurs de la classe.`}
             </div>
           )}
         </div>
@@ -192,7 +192,7 @@ export default function Result() {
         <>
           <h2 style={{ marginBottom: '0.75rem' }}>Classement de la classe</h2>
           <div className="card">
-            <Ranking quizId={session.quizId} sessions={ranking ?? undefined} highlightSessionId={session.id} />
+            <Ranking sessions={ranking} highlightSessionId={session.id} />
           </div>
         </>
       )}

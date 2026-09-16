@@ -11,6 +11,7 @@ use App\Quiz\Application\Dto\QuizInput;
 use App\Quiz\Application\QuizWriter;
 use App\Quiz\Domain\Model\Quiz;
 use App\Shared\Application\UnitOfWork;
+use App\Shared\Domain\Exception\ConcurrentModificationException;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
@@ -39,13 +40,18 @@ class GenerateQuiz
         }
 
         // Publier le quiz et décompter la génération réussissent ou échouent ensemble.
-        return $this->unitOfWork->transactional(function () use ($quizInput, $key, $author): Quiz {
-            $quiz = $this->writer->create($quizInput, $author, $author->getUsername());
-            $key->consume();
-            $this->unitOfWork->flush();
+        try {
+            return $this->unitOfWork->transactional(function () use ($quizInput, $key, $author): Quiz {
+                $quiz = $this->writer->create($quizInput, $author, $author->getUsername());
+                $key->consume();
+                $this->unitOfWork->flush();
 
-            return $quiz;
-        });
+                return $quiz;
+            });
+        } catch (ConcurrentModificationException) {
+            // Une autre génération a utilisé la clé pendant celle-ci : le quiz n'est pas publié.
+            throw new AiGenerationException('Ta clé IA vient d’être utilisée par une autre génération : réessaie.', 409);
+        }
     }
 
     /** @param array{title: string, description: ?string, category: string, difficulty: string, questions: list<array{text: string, choices: list<string>, correctIndex: int, explanation: ?string}>} $draft */

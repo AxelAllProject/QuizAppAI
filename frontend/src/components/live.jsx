@@ -40,10 +40,28 @@ export function useLiveGame(pin) {
   useEffect(() => {
     if (finished) return undefined
 
-    /** Relit l'état de la partie. */
-    const poll = () => track(api(`/api/live-games/${pin}`)).catch(setError)
+    let pending = false
+    let timer
+
+    /**
+     * Relit l'état de la partie. Pas de lecture tant que la précédente n'est pas revenue
+     * (réseau lent) ni quand l'onglet est caché (téléphone en veille) ; un PIN inconnu
+     * arrête le polling plutôt que d'interroger le serveur chaque seconde pour rien.
+     */
+    const poll = () => {
+      if (pending || document.hidden) return
+      pending = true
+      track(api(`/api/live-games/${pin}`))
+        .catch((err) => {
+          setError(err)
+          if (err.status === 404) clearInterval(timer)
+        })
+        .finally(() => {
+          pending = false
+        })
+    }
     poll()
-    const timer = setInterval(poll, POLL_MS)
+    timer = setInterval(poll, POLL_MS)
     return () => clearInterval(timer)
   }, [pin, track, finished])
 

@@ -101,6 +101,37 @@ class LiveGameApiTest extends ApiTestCase
         $this->assertResponseStatusCodeSame(404);
     }
 
+    public function testSweepingPinsIsRateLimitedPerAccount(): void
+    {
+        $pin = $this->hostGame();
+        $unknownPins = array_diff(array_map(static fn (int $i) => sprintf('%06d', $i), range(0, 10)), [$pin]);
+
+        foreach (array_slice($unknownPins, 0, 10) as $unknown) {
+            $this->request('POST', "/api/live-games/$unknown/join", as: 'curieux');
+            $this->assertResponseStatusCodeSame(404);
+        }
+
+        // Une fois la limite atteinte, même un PIN valide est refusé : impossible de continuer à balayer.
+        $this->request('POST', "/api/live-games/$pin/join", as: 'curieux');
+        $this->assertResponseStatusCodeSame(429);
+        $this->assertResponseHasHeader('Retry-After');
+
+        $this->request('POST', "/api/live-games/$pin/join", as: 'eleve');
+        $this->assertResponseIsSuccessful('Les erreurs d’un compte ne doivent pas bloquer les autres joueurs.');
+    }
+
+    public function testKnownPinsNeverCountTowardsTheLimit(): void
+    {
+        $pin = $this->hostGame();
+        $this->request('POST', "/api/live-games/$pin/join", as: 'eleve');
+
+        for ($i = 0; $i < 30; ++$i) {
+            $this->request('GET', "/api/live-games/$pin", as: 'eleve');
+        }
+
+        $this->assertResponseIsSuccessful('Le polling d’une vraie partie (une requête par seconde) ne doit jamais être limité.');
+    }
+
     public function testStoppingAGameClosesItToNewPlayers(): void
     {
         $pin = $this->hostGame();

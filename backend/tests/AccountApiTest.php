@@ -2,6 +2,10 @@
 
 namespace App\Tests;
 
+use App\Identity\Domain\Model\User;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Doctrine\ORM\EntityManagerInterface;
+
 class AccountApiTest extends ApiTestCase
 {
     public function testLoginIsRateLimitedAgainstBruteForcing(): void
@@ -98,6 +102,27 @@ class AccountApiTest extends ApiTestCase
 
         $this->assertResponseStatusCodeSame(422);
         $this->assertCount(2, $payload['errors']);
+    }
+
+    public function testNamesDifferingOnlyByAccentedCaseAreTheSamePseudo(): void
+    {
+        $this->request('POST', '/api/register', $this->registration(['email' => 'zoe@exemple.test', 'name' => 'Élodie']));
+        $this->assertResponseStatusCodeSame(201);
+
+        $this->request('POST', '/api/register', $this->registration(['email' => 'autre@exemple.test', 'name' => 'éLODIE']));
+
+        $this->assertResponseStatusCodeSame(422, 'LOWER() de SQLite ne traite pas « É » : la comparaison doit se faire sur la forme canonique.');
+    }
+
+    public function testTheDatabaseRefusesTwoPseudosDifferingOnlyByCase(): void
+    {
+        // Simule deux inscriptions simultanées : la vérification en PHP est contournée, seule la base protège.
+        $em = static::getContainer()->get(EntityManagerInterface::class);
+        $em->persist((new User())->setEmail('a@exemple.test')->setUsername('Zoé')->setPassword('x'));
+        $em->persist((new User())->setEmail('b@exemple.test')->setUsername('ZOÉ')->setPassword('x'));
+
+        $this->expectException(UniqueConstraintViolationException::class);
+        $em->flush();
     }
 
     public function testLoginChecksThePassword(): void
@@ -250,6 +275,33 @@ class AccountApiTest extends ApiTestCase
         // L'adresse est libérée : la personne peut revenir plus tard.
         $this->request('POST', '/api/register', $this->registration(['email' => 'prof.martin@exemple.test', 'name' => 'prof.martin']));
         $this->assertResponseStatusCodeSame(201);
+    }
+
+    public function testDeletionPasswordCannotBeGuessedWithAStolenToken(): void
+    {
+        $this->account('bob');
+
+        for ($i = 0; $i < 5; ++$i) {
+            $this->request('DELETE', '/api/me', ['password' => 'essai-'.$i], as: 'bob');
+            $this->assertResponseStatusCodeSame(403);
+        }
+
+        // Même le bon mot de passe est refusé tant que la limite court : sinon l'essai suivant révélerait s'il est juste.
+        $this->request('DELETE', '/api/me', ['password' => self::PASSWORD], as: 'bob');
+        $this->assertResponseStatusCodeSame(429);
+        $this->assertResponseHasHeader('Retry-After');
+        $this->request('GET', '/api/me', as: 'bob');
+        $this->assertResponseIsSuccessful('Le compte ne doit pas avoir été supprimé.');
+    }
+
+    public function testDeletionFailuresOfOneAccountDoNotBlockAnother(): void
+    {
+        for ($i = 0; $i < 5; ++$i) {
+            $this->request('DELETE', '/api/me', ['password' => 'essai-'.$i], as: 'bob');
+        }
+
+        $this->request('DELETE', '/api/me', ['password' => self::PASSWORD], as: 'chloe');
+        $this->assertResponseStatusCodeSame(204);
     }
 
     private function registration(array $overrides = []): array

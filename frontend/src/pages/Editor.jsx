@@ -5,6 +5,8 @@ import { useAuth } from '../auth'
 import AiChatWidget from '../components/AiChatWidget'
 import ImageField from '../components/ImageField'
 import { ErrorBox, Field } from '../components/ui'
+import { QUIZ_LIMITS } from '../limits'
+import { uid } from '../uid'
 import { Icon } from '../components/Icon'
 
 /** Durées de chrono proposées par question, en secondes. */
@@ -12,7 +14,7 @@ const TIME_LIMITS = [5, 10, 20, 30, 60, 90, 120, 240]
 
 /** Crée une question vide avec deux propositions. */
 const emptyQuestion = () => ({
-  key: crypto.randomUUID(),
+  key: uid(),
   text: '',
   image: null,
   choices: ['', ''],
@@ -53,7 +55,7 @@ export default function Editor() {
         })
         setQuestions(
           quiz.questions.map((question) => ({
-            key: crypto.randomUUID(),
+            key: uid(),
             text: question.text,
             image: question.image ?? null,
             choices: question.choices,
@@ -88,7 +90,7 @@ export default function Editor() {
   function addChoice(key) {
     setQuestions((current) =>
       current.map((question) =>
-        question.key === key && question.choices.length < 6
+        question.key === key && question.choices.length < QUIZ_LIMITS.choices
           ? { ...question, choices: [...question.choices, ''] }
           : question,
       ),
@@ -182,7 +184,7 @@ export default function Editor() {
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
               placeholder="ex. Les capitales du monde"
-              maxLength={180}
+              maxLength={QUIZ_LIMITS.title}
             />
           </Field>
 
@@ -191,6 +193,7 @@ export default function Editor() {
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               placeholder="De quoi parle ce quiz ?"
+              maxLength={QUIZ_LIMITS.description}
             />
           </Field>
 
@@ -200,7 +203,7 @@ export default function Editor() {
                 value={form.category}
                 onChange={(e) => setForm({ ...form, category: e.target.value })}
                 placeholder="Général"
-                maxLength={60}
+                maxLength={QUIZ_LIMITS.category}
               />
             </Field>
             <Field label="Difficulté">
@@ -228,7 +231,13 @@ export default function Editor() {
           <h2>
             Questions <span className="badge accent">{questions.length}</span>
           </h2>
-          <button type="button" className="btn sm" onClick={() => setQuestions([...questions, emptyQuestion()])}>
+          <button
+            type="button"
+            className="btn sm"
+            onClick={() => setQuestions([...questions, emptyQuestion()])}
+            disabled={questions.length >= QUIZ_LIMITS.questions}
+            title={questions.length >= QUIZ_LIMITS.questions ? `${QUIZ_LIMITS.questions} questions au maximum par quiz` : undefined}
+          >
             + Ajouter une question
           </button>
         </div>
@@ -274,6 +283,7 @@ export default function Editor() {
                     value={question.text}
                     onChange={(e) => updateQuestion(question.key, { text: e.target.value })}
                     placeholder="Quelle est la capitale de l’Italie ?"
+                    maxLength={QUIZ_LIMITS.questionText}
                   />
                 </Field>
 
@@ -313,6 +323,7 @@ export default function Editor() {
                           value={choice}
                           onChange={(e) => updateChoice(question.key, choiceIndex, e.target.value)}
                           placeholder={`Proposition ${choiceIndex + 1}`}
+                          maxLength={QUIZ_LIMITS.choiceText}
                         />
                         {question.choices.length > 2 && (
                           <button
@@ -329,7 +340,7 @@ export default function Editor() {
                   </div>
                 </Field>
 
-                {question.choices.length < 6 && (
+                {question.choices.length < QUIZ_LIMITS.choices && (
                   <button type="button" className="btn ghost sm" onClick={() => addChoice(question.key)}>
                     + Proposition
                   </button>
@@ -340,6 +351,7 @@ export default function Editor() {
                     value={question.explanation}
                     onChange={(e) => updateQuestion(question.key, { explanation: e.target.value })}
                     placeholder="Pourquoi cette réponse ?"
+                    maxLength={QUIZ_LIMITS.explanation}
                   />
                 </Field>
               </div>

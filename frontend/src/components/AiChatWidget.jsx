@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api'
+import { uid } from '../uid'
 import { Icon } from './Icon'
 
 /** Nombres de réponses proposés par question. */
@@ -43,7 +44,7 @@ export default function AiChatWidget() {
     setTopic('')
     setMessages((current) => [
       ...current,
-      { id: crypto.randomUUID(), role: 'user', text: question },
+      { id: uid(), role: 'user', text: question },
       { id: 'typing', role: 'assistant', kind: 'typing' },
     ])
 
@@ -52,9 +53,9 @@ export default function AiChatWidget() {
         method: 'POST',
         body: { topic: question, questionCount, choiceCount, difficulty },
       })
-      replaceTyping({ id: crypto.randomUUID(), role: 'assistant', kind: 'created', quiz })
+      replaceTyping({ id: uid(), role: 'assistant', kind: 'created', quiz })
     } catch (err) {
-      replaceTyping({ id: crypto.randomUUID(), role: 'assistant', kind: 'error', text: err.message, status: err.status, topic: question })
+      replaceTyping({ id: uid(), role: 'assistant', kind: 'error', text: err.message, status: err.status, topic: question })
     } finally {
       setBusy(false)
     }
@@ -102,7 +103,7 @@ export default function AiChatWidget() {
                 min={1}
                 max={20}
                 value={questionCount}
-                onChange={(e) => setQuestionCount(Number(e.target.value))}
+                onChange={(e) => setQuestionCount(Math.min(20, Math.max(1, Number(e.target.value) || 1)))}
               />
             </label>
             <label>

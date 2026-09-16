@@ -3,9 +3,11 @@
 namespace App\Shared\Infrastructure\Persistence;
 
 use App\Shared\Application\UnitOfWork;
+use App\Shared\Domain\Exception\ConcurrentModificationException;
 use App\Shared\Domain\Exception\DuplicateEntryException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\OptimisticLockException;
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 
 /** Implémentation Doctrine de l'unité de travail. */
@@ -16,13 +18,15 @@ class DoctrineUnitOfWork implements UnitOfWork
     {
     }
 
-    /** Écrit en base les changements en attente, et traduit une violation d'unicité en exception métier. */
+    /** Écrit en base les changements en attente, et traduit les conflits d'écriture en exceptions métier. */
     public function flush(): void
     {
         try {
             $this->em->flush();
         } catch (UniqueConstraintViolationException $exception) {
             throw new DuplicateEntryException($exception->getMessage(), previous: $exception);
+        } catch (OptimisticLockException $exception) {
+            throw new ConcurrentModificationException($exception->getMessage(), previous: $exception);
         }
     }
 

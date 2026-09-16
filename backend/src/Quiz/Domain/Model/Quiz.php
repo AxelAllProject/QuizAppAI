@@ -9,6 +9,9 @@ use Doctrine\ORM\Mapping as ORM;
 
 /** Quiz de la bibliothèque, avec ses questions ordonnées. */
 #[ORM\Entity]
+// Bibliothèque triée par date et filtrée par matière.
+#[ORM\Index(fields: ['createdAt'])]
+#[ORM\Index(fields: ['category'])]
 class Quiz
 {
     #[ORM\Id]

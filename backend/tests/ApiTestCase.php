@@ -4,6 +4,8 @@ namespace App\Tests;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
+use Monolog\Handler\TestHandler;
+use Monolog\Logger;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -65,6 +67,19 @@ abstract class ApiTestCase extends WebTestCase
         $this->assertResponseStatusCodeSame(201, 'Inscription impossible pour '.$name);
 
         return $this->tokens[$name] = $payload['token'];
+    }
+
+    /**
+     * Capture les lignes écrites sur un canal de journal (audit, ai…) à partir de maintenant.
+     * Le noyau ne reboote pas entre deux requêtes (voir setUp) : le handler reste branché.
+     */
+    protected function captureLogs(string $channel): TestHandler
+    {
+        $logger = static::getContainer()->get('monolog.logger.'.$channel);
+        \assert($logger instanceof Logger);
+        $logger->pushHandler($handler = new TestHandler());
+
+        return $handler;
     }
 
     protected function admin(): string

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api, downloadJson } from '../api'
 import { useAuth } from '../auth'
@@ -6,7 +6,7 @@ import { ErrorBox, Field, formatDate } from '../components/ui'
 import { Icon } from '../components/Icon'
 
 /** Libellé affiché pour chaque rôle. */
-const ROLE_LABELS = { user: 'joueur', prof: 'professeur', admin: 'administrateur' }
+const ROLE_LABELS = { user: 'élève', prof: 'professeur', admin: 'administrateur' }
 
 /** Page « Mon compte » : clés, export et suppression des données. */
 export default function Account() {
@@ -20,6 +20,11 @@ export default function Account() {
   const [exportError, setExportError] = useState(null)
   const [password, setPassword] = useState('')
   const [deleteState, setDeleteState] = useState({ busy: false, error: null })
+
+  // Le quota de la clé IA baisse à chaque génération, faite depuis une autre page : on relit le compte.
+  useEffect(() => {
+    api('/api/me').then(updateUser).catch(() => {})
+  }, [updateUser])
 
   /** Envoie la clé d'accès saisie et met à jour le rôle affiché. */
   async function redeem(event) {

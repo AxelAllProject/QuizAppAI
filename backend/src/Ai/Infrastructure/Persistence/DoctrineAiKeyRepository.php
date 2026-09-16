@@ -5,6 +5,7 @@ namespace App\Ai\Infrastructure\Persistence;
 use App\Ai\Domain\Model\AiKey;
 use App\Ai\Domain\Repository\AiKeyRepository;
 use App\Identity\Domain\Model\User;
+use App\Shared\Infrastructure\Persistence\LikePattern;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Psr\Clock\ClockInterface;
@@ -63,8 +64,8 @@ class DoctrineAiKeyRepository extends ServiceEntityRepository implements AiKeyRe
             ->addOrderBy('k.id', 'DESC');
 
         if (null !== $term && '' !== trim($term)) {
-            $qb->andWhere('LOWER(k.value) LIKE :term OR LOWER(k.label) LIKE :term OR LOWER(k.redeemedByName) LIKE :term')
-                ->setParameter('term', '%'.mb_strtolower(trim($term)).'%');
+            $qb->andWhere(sprintf('LOWER(k.value) LIKE :term %1$s OR LOWER(k.label) LIKE :term %1$s OR LOWER(k.redeemedByName) LIKE :term %1$s', LikePattern::ESCAPE))
+                ->setParameter('term', LikePattern::contains($term));
         }
 
         // Un paramètre déclaré mais absent du DQL fait échouer la requête : on ne lie

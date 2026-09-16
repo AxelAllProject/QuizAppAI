@@ -1,5 +1,7 @@
+import { Suspense } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { Icon } from '../../components/Icon'
+import { Loader } from '../../components/ui'
 
 /** Sections du back-office affichées dans le menu. */
 const SECTIONS = [
@@ -36,7 +38,10 @@ export default function AdminLayout() {
       </aside>
 
       <section className="admin-main">
-        <Outlet />
+        {/* Le menu du back-office reste en place pendant le chargement d'une section. */}
+        <Suspense fallback={<Loader count={1} />}>
+          <Outlet />
+        </Suspense>
       </section>
     </div>
   )

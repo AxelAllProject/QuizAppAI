@@ -8,6 +8,8 @@ use Doctrine\ORM\Mapping as ORM;
 
 /** Partie solo terminée : score, durée et correction de chaque question. */
 #[ORM\Entity]
+// Historique trié par date (findHistory).
+#[ORM\Index(fields: ['playedAt'])]
 class GameSession
 {
     #[ORM\Id]

@@ -28,6 +28,14 @@ class AiKey
     #[ORM\Column]
     private int $remainingGenerations;
 
+    /**
+     * Verrou optimiste : deux générations simultanées lisent la même clé ; la seconde à écrire
+     * trouve une version périmée et est annulée, au lieu de consommer une génération déjà utilisée.
+     */
+    #[ORM\Version]
+    #[ORM\Column(type: 'integer', options: ['default' => 1])]
+    private int $version = 1;
+
     #[ORM\Column(length: 120, nullable: true)]
     private ?string $label = null;
 

@@ -1,0 +1,71 @@
+# Publication d'une version : pousser un tag vX.Y.Z crée la release GitHub.
+#   git tag -a v1.0.0 -m "QuizLab 1.0.0" && git push origin v1.0.0
+# Les tests backend et frontend doivent passer ; un tag avec suffixe (v1.1.0-beta.1)
+# est publié comme pré-version.
+name: Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+*"
+
+permissions:
+  contents: write
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: intl, zip, pdo_sqlite
+      - run: composer install --no-interaction --no-progress
+      - run: php bin/phpunit
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run lint
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+
+  release:
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: dist
+      - name: Archive du frontend compilé
+        run: cd dist && zip -r "../quizlab-frontend-${GITHUB_REF_NAME}.zip" .
+      - name: Release GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          prerelease=""
+          [[ "$GITHUB_REF_NAME" == *-* ]] && prerelease="--prerelease"
+          gh release create "$GITHUB_REF_NAME" \
+            --title "QuizLab ${GITHUB_REF_NAME#v}" \
+            --generate-notes --verify-tag $prerelease \
+            "quizlab-frontend-${GITHUB_REF_NAME}.zip"

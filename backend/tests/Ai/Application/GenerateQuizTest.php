@@ -11,6 +11,7 @@ use App\Identity\Domain\Model\User;
 use App\Quiz\Application\QuizWriter;
 use App\Quiz\Domain\Model\Quiz;
 use App\Shared\Application\UnitOfWork;
+use App\Shared\Domain\Exception\ConcurrentModificationException;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Validator\Validation;
 
@@ -64,6 +65,19 @@ class GenerateQuizTest extends TestCase
             $this->fail('Un titre trop court aurait dû être refusé.');
         } catch (AiGenerationException) {
             $this->assertSame(5, $key->getRemainingGenerations());
+        }
+    }
+
+    public function testAKeyUsedConcurrentlyIsReportedAsAConflict(): void
+    {
+        $unitOfWork = $this->createStub(UnitOfWork::class);
+        $unitOfWork->method('transactional')->willThrowException(new ConcurrentModificationException('version périmée'));
+
+        try {
+            $this->generateQuiz(self::DRAFT, $this->createStub(QuizWriter::class), $unitOfWork)->generate(new GenerateQuizInput(topic: 'volcans'), new AiKey('CODE', 1), new User());
+            $this->fail('Un conflit de version aurait dû être signalé.');
+        } catch (AiGenerationException $exception) {
+            $this->assertSame(409, $exception->getStatusCode());
         }
     }
 

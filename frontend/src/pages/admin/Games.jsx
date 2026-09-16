@@ -6,7 +6,7 @@ import { ErrorBox, formatDate } from '../../components/ui'
 
 /**
  * Historique des parties et classement. L'API des sessions ne filtre pas côté
- * serveur : la liste est bornée à l'historique récent, donc le tri se fait ici.
+ * serveur : la liste est bornée aux 50 dernières parties, donc la recherche se fait ici.
  */
 export default function Games() {
   const [sessions, setSessions] = useState([])
@@ -63,7 +63,7 @@ export default function Games() {
   return (
     <>
       <SectionHead title="Parties">
-        Toutes les parties jouées sur la plateforme, et le classement construit à partir d’elles. Chaque ligne ouvre
+        Les 50 dernières parties jouées sur la plateforme, et le classement général calculé sur toutes les parties. Chaque ligne ouvre
         la correction détaillée.
       </SectionHead>
 

@@ -10,8 +10,11 @@ use App\Live\Domain\Model\LiveGame;
 use App\Live\Domain\Repository\LiveGameRepository;
 use App\Live\UI\Http\Dto\LiveAnswerInput;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
+use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
@@ -23,6 +26,8 @@ class LiveGameController extends AbstractController
         private readonly LiveGameRepository $games,
         private readonly LiveGameEngine $engine,
         private readonly LiveGameNormalizer $normalizer,
+        #[Autowire(service: 'limiter.live_game_pin_misses')]
+        private readonly RateLimiterFactory $pinMissesLimiter,
     ) {
     }
 
@@ -30,9 +35,7 @@ class LiveGameController extends AbstractController
     #[Route('/{pin}', name: 'api_live_state', methods: ['GET'], requirements: ['pin' => '\d{6}'])]
     public function state(string $pin, #[CurrentUser] User $user): JsonResponse
     {
-        if (!$game = $this->games->findLatestByPin($pin)) {
-            return $this->notFound();
-        }
+        $game = $this->find($pin, $user);
 
         $this->engine->refresh($game);
         $player = $this->engine->playerOf($game, $user);
@@ -48,9 +51,7 @@ class LiveGameController extends AbstractController
     #[Route('/{pin}/join', name: 'api_live_join', methods: ['POST'], requirements: ['pin' => '\d{6}'])]
     public function join(string $pin, #[CurrentUser] User $user): JsonResponse
     {
-        if (!$game = $this->games->findLatestByPin($pin)) {
-            return $this->notFound();
-        }
+        $game = $this->find($pin, $user);
 
         try {
             $player = $this->engine->join($game, $user);
@@ -65,9 +66,7 @@ class LiveGameController extends AbstractController
     #[Route('/{pin}/next', name: 'api_live_next', methods: ['POST'], requirements: ['pin' => '\d{6}'])]
     public function next(string $pin, #[CurrentUser] User $user): JsonResponse
     {
-        if (!$game = $this->games->findLatestByPin($pin)) {
-            return $this->notFound();
-        }
+        $game = $this->find($pin, $user);
 
         if (!$this->isHost($game, $user)) {
             return $this->json(['error' => 'Seul l’animateur fait avancer la partie.'], 403);
@@ -86,9 +85,7 @@ class LiveGameController extends AbstractController
     #[Route('/{pin}/answers', name: 'api_live_answer', methods: ['POST'], requirements: ['pin' => '\d{6}'])]
     public function answer(string $pin, #[MapRequestPayload] LiveAnswerInput $input, #[CurrentUser] User $user): JsonResponse
     {
-        if (!$game = $this->games->findLatestByPin($pin)) {
-            return $this->notFound();
-        }
+        $game = $this->find($pin, $user);
 
         if (!$player = $this->engine->playerOf($game, $user)) {
             return $this->json(['error' => 'Rejoins d’abord la partie avec son code PIN.'], 403);
@@ -107,9 +104,7 @@ class LiveGameController extends AbstractController
     #[Route('/{pin}', name: 'api_live_stop', methods: ['DELETE'], requirements: ['pin' => '\d{6}'])]
     public function stop(string $pin, #[CurrentUser] User $user): JsonResponse
     {
-        if (!$game = $this->games->findLatestByPin($pin)) {
-            return $this->notFound();
-        }
+        $game = $this->find($pin, $user);
 
         if (!$this->isHost($game, $user)) {
             return $this->json(['error' => 'Seul l’animateur peut arrêter la partie.'], 403);
@@ -126,9 +121,25 @@ class LiveGameController extends AbstractController
         return $game->getHost()->getId() === $user->getId();
     }
 
-    /** Réponse 404 quand aucune partie ne correspond au code PIN. */
-    private function notFound(): JsonResponse
+    /**
+     * Récupère la partie du code PIN, ou lève une 404. Un PIN n'a que 6 chiffres : chaque code
+     * inconnu compte pour le compte connecté, et au-delà de la limite toute recherche est refusée
+     * (429) — balayer les codes pour entrer dans les parties des autres classes devient impraticable.
+     */
+    private function find(string $pin, User $user): LiveGame
     {
-        return $this->json(['error' => 'Aucune partie avec ce code PIN.'], 404);
+        $limiter = $this->pinMissesLimiter->create((string) $user->getId());
+
+        if (0 === ($limit = $limiter->consume(0))->getRemainingTokens()) {
+            throw new TooManyRequestsHttpException(max(1, $limit->getRetryAfter()->getTimestamp() - time()), 'Trop de codes PIN inconnus : réessaie dans quelques minutes.');
+        }
+
+        if (!$game = $this->games->findLatestByPin($pin)) {
+            $limiter->consume();
+
+            throw $this->createNotFoundException('Aucune partie avec ce code PIN.');
+        }
+
+        return $game;
     }
 }

@@ -100,5 +100,6 @@ export async function downloadJson(path, filename) {
   link.href = url
   link.download = filename
   link.click()
-  URL.revokeObjectURL(url)
+  // Révoquée tout de suite, l'URL peut disparaître avant que le navigateur lance le téléchargement.
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
 }

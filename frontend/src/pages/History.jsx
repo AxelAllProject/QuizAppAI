@@ -29,9 +29,12 @@ export default function History() {
   const [sessions, setSessions] = useState(null)
   const [quizzes, setQuizzes] = useState([])
   const [error, setError] = useState(null)
+  // Totaux sur toutes les parties : la liste ci-dessus s'arrête aux 50 dernières.
+  const [summary, setSummary] = useState(null)
 
   useEffect(() => {
     api('/api/sessions').then(setSessions).catch(setError)
+    api('/api/sessions/summary').then(setSummary).catch(() => {})
     // Les catégories ne servent qu'au regroupement par matière : facultatives.
     api('/api/quizzes').then(setQuizzes).catch(() => {})
   }, [])
@@ -68,8 +71,8 @@ export default function History() {
         <>
           <div className="stat-grid" style={{ marginBottom: '1.5rem' }}>
             {[
-              [sessions.length, 'parties jouées'],
-              [`${learning.average}%`, 'de réussite moyenne'],
+              [summary?.sessionCount ?? sessions.length, 'parties jouées'],
+              [`${summary?.averageAccuracy ?? learning.average}%`, 'de réussite moyenne'],
               [learning.best.size, 'quiz différents'],
               [learning.mastered, 'quiz maîtrisés (≥ 80 %)'],
             ].map(([value, label]) => (
@@ -136,6 +139,11 @@ export default function History() {
           </div>
 
           <h2 style={{ marginBottom: '0.75rem' }}>Journal des parties</h2>
+          {sessions.length < (summary?.sessionCount ?? 0) && (
+            <p className="muted" style={{ marginBottom: '0.75rem' }}>
+              Tes {sessions.length} dernières parties sur {summary.sessionCount}.
+            </p>
+          )}
           <div className="card table-wrap">
             <table>
               <thead>
