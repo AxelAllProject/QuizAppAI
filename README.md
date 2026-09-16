@@ -117,7 +117,7 @@ suffisant pour une classe.
 cd backend
 composer install
 php bin/console doctrine:migrations:migrate   # crée / met à jour var/quiz_dev.db
-php bin/console doctrine:fixtures:load        # jeu de démo complet (VIDE la base) — voir docs/fixtures.md
+php bin/console doctrine:fixtures:load        # jeu de démo complet (VIDE la base)
 symfony server:start -d
 
 # Frontend — http://localhost:5173
@@ -144,8 +144,6 @@ Le code est monté dans les conteneurs (rechargement à chaud conservé). Au dé
 le backend installe les dépendances Composer si besoin et applique les migrations ;
 la base SQLite reste dans `backend/var/`. `GROQ_API_KEY` se lit toujours dans
 `backend/.env.local`.
-
-📄 **Fonctionnement, commandes et dépannage : [docs/docker.md](docs/docker.md)**
 
 ## Rôles et connexion
 
@@ -188,8 +186,6 @@ Les trois listings se filtrent **côté serveur** — recherche libre, rôle, é
 et non dans le navigateur : l'API ne renvoie que les lignes qui correspondent, donc
 l'écran tient quand la base grossit. Chaque clé porte un **état** unique
 (active, attribuée, périmée, révoquée) sur lequel on peut filtrer.
-
-📄 **Clés en place, rôles et gestion détaillée : [docs/administration.md](docs/administration.md)**
 
 ## Fonctionnalités
 
@@ -328,11 +324,6 @@ projet/
 │       ├── pages/            routes de l'app (Library, Editor, LiveHost…)
 │       │   └── admin/         back-office (vue d'ensemble, comptes, clés, parties)
 │       └── components/       widgets partagés (tableaux filtrables, chat IA, tuiles de jeu…)
-└── docs/
-    ├── administration.md     rôles, clés d'accès, clés IA, RGPD
-    ├── docker.md             formation Docker : pourquoi, comment, commandes
-    ├── fixtures.md           données de démo : comptes, clés, architecture
-    └── CHANGELOG.md          une entrée par fonctionnalité
 ```
 
 ## Tests
