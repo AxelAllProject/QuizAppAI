@@ -1,5 +1,5 @@
 # Image de développement du frontend React (serveur Vite).
-FROM node:24-alpine
+FROM node:26-alpine
 
 WORKDIR /app
 
