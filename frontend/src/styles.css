@@ -1116,3 +1116,26 @@ a.hero-stat:hover { transform: translateY(-2px); }
 .tip .icon { color: var(--warning); }
 
 .finish-mark { display: flex; justify-content: center; color: var(--accent); }
+
+/* ==========================================================================
+   Aide : guides d'utilisation illustrés
+   ========================================================================== */
+
+.help { max-width: 980px; }
+.help-tabs { display: flex; flex-wrap: wrap; gap: 0.4rem; padding: 0.3rem; margin-bottom: 1.5rem; border: 1px solid var(--border); border-radius: 999px; background: var(--surface-sunken); width: fit-content; }
+.help-tabs button { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 1rem; border: 0; border-radius: 999px; background: transparent; color: var(--text-muted); font: inherit; font-weight: 600; cursor: pointer; }
+.help-tabs button:hover { color: var(--text); }
+.help-tabs button.active { background: var(--accent); color: #fff; box-shadow: var(--shadow-sm); }
+.help-hint { margin-bottom: 1.5rem; padding: 0.7rem 0.95rem; border: 1px solid rgba(224, 161, 0, 0.35); border-radius: var(--radius-sm); background: var(--warning-soft); color: var(--warning); font-size: 0.88rem; }
+.help-section h2 { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.75rem; }
+.help-step { display: inline-grid; place-items: center; width: 1.8rem; height: 1.8rem; border-radius: 50%; background: var(--accent-soft); color: var(--accent-strong); font-size: 0.95rem; }
+.help-section ol { margin: 0; padding-left: 1.3rem; color: var(--text-muted); }
+.help-section li { margin: 0.4rem 0; line-height: 1.55; }
+.help-section li b { color: var(--text); }
+.help-section li a { color: var(--accent-strong); font-weight: 600; }
+.help-shots { display: grid; gap: 1rem; margin-top: 1.1rem; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.help-shots.mobile { grid-template-columns: repeat(auto-fit, minmax(160px, 220px)); justify-content: center; }
+.help-shots figure { margin: 0; }
+.help-shots img { display: block; width: 100%; height: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow); }
+.help-shots figcaption { margin-top: 0.45rem; text-align: center; color: var(--text-faint); font-size: 0.8rem; }
+

@@ -59,6 +59,7 @@ export default function App() {
 
       <footer className="site-footer">
         <span>QuizLab — apprendre, jouer et progresser ensemble</span>
+        <Link to="/aide">Aide</Link>
         <Link to="/account">Mon compte</Link>
         <Link to="/confidentialite">Confidentialité et données personnelles</Link>
       </footer>

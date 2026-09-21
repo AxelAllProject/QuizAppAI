@@ -35,6 +35,8 @@ const AiKeysPage = lazy(() => import('./pages/admin/AiKeysPage'))
 const Games = lazy(() => import('./pages/admin/Games'))
 const Overview = lazy(() => import('./pages/admin/Overview'))
 const Editor = lazy(() => import('./pages/Editor'))
+// Guides illustrés : leurs captures ne se téléchargent qu'à l'ouverture de l'aide.
+const Help = lazy(() => import('./pages/Help'))
 const LiveHost = lazy(() => import('./pages/LiveHost'))
 
 /** Le back-office n'a de sens que pour un admin. */
@@ -83,6 +85,7 @@ createRoot(document.getElementById('root')).render(
             <Route path="/live/:pin" element={<LivePlayer />} />
             <Route path="/live/:pin/host" element={<LiveHost />} />
             <Route path="/account" element={<Account />} />
+            <Route path="/aide" element={<Help />} />
             <Route
               path="/admin"
               element={
