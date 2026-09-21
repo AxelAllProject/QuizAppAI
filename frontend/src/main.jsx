@@ -5,6 +5,7 @@ import App from './App'
 import { AuthProvider, useAuth } from './auth'
 import Account from './pages/Account'
 import Community from './pages/Community'
+import ForgotPassword from './pages/ForgotPassword'
 import History from './pages/History'
 import Join from './pages/Join'
 import Library from './pages/Library'
@@ -12,6 +13,7 @@ import LivePlayer from './pages/LivePlayer'
 import Login from './pages/Login'
 import Play from './pages/Play'
 import Privacy from './pages/Privacy'
+import ResetPassword from './pages/ResetPassword'
 import Result from './pages/Result'
 import Scores from './pages/Scores'
 // Polices servies par l'application elle-même (sous-ensemble latin) : aucune requête vers Google Fonts,
@@ -57,6 +59,8 @@ createRoot(document.getElementById('root')).render(
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/mot-de-passe-oublie" element={<ForgotPassword />} />
+          <Route path="/mot-de-passe/:token" element={<ResetPassword />} />
           <Route path="/confidentialite" element={<Privacy />} />
           <Route element={<App />}>
             <Route path="/" element={<Library />} />

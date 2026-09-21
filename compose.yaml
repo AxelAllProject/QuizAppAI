@@ -1,6 +1,7 @@
 # Environnement de développement : `docker compose up --build`
 #   frontend → http://localhost:5173
 #   backend  → http://localhost:8000
+#   mailpit  → http://localhost:8025 (boîte de réception des e-mails de dev)
 services:
   backend:
     build: ./backend
@@ -10,9 +11,14 @@ services:
       APP_ENV: dev
       # Secret de développement uniquement (le vrai .env.dev n'est pas versionné).
       APP_SECRET: ${APP_SECRET:-dev-secret-change-me}
+      # Les e-mails partent dans Mailpit, jamais vers de vraies adresses.
+      MAILER_DSN: smtp://mailer:1025
+      APP_FRONTEND_URL: http://localhost:5173
     volumes:
       - ./backend:/app
       - composer_cache:/root/.composer/cache
+    depends_on:
+      - mailer
 
   frontend:
     build: ./frontend
@@ -26,6 +32,16 @@ services:
       - frontend_node_modules:/app/node_modules
     depends_on:
       - backend
+
+  # Faux serveur SMTP : capte tous les e-mails du développement et les affiche
+  # sur http://localhost:8025. Rien ne sort de la machine.
+  mailer:
+    image: axllent/mailpit
+    ports:
+      - "8025:8025"
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
 
 volumes:
   composer_cache:

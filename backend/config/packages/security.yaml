@@ -26,6 +26,8 @@ security:
     # Note: Only the *first* matching rule is applied
     access_control:
         - { path: ^/api/(login|register|logout)$, roles: PUBLIC_ACCESS }
+        # « Mot de passe oublié » : ouvert par nature — qui a perdu son mot de passe n'a pas de jeton.
+        - { path: ^/api/password-reset(/confirm)?$, roles: PUBLIC_ACCESS }
         - { path: ^/api, roles: ROLE_USER }
 
 when@test:

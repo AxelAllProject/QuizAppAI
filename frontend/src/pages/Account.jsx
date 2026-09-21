@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { startTransition, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api, downloadJson } from '../api'
 import { useAuth } from '../auth'
 import { ErrorBox, Field, formatDate } from '../components/ui'
 import { Icon } from '../components/Icon'
+import ProfileForm from '../components/ProfileForm'
 
 /** Libellé affiché pour chaque rôle. */
 const ROLE_LABELS = { user: 'élève', prof: 'professeur', admin: 'administrateur' }
@@ -20,6 +21,8 @@ export default function Account() {
   const [exportError, setExportError] = useState(null)
   const [password, setPassword] = useState('')
   const [deleteState, setDeleteState] = useState({ busy: false, error: null })
+  const [editing, setEditing] = useState(false)
+  const [saved, setSaved] = useState(false)
 
   // Le quota de la clé IA baisse à chaque génération, faite depuis une autre page : on relit le compte.
   useEffect(() => {
@@ -72,8 +75,12 @@ export default function Account() {
     setDeleteState({ busy: true, error: null })
     try {
       await api('/api/me', { method: 'DELETE', body: { password } })
-      navigate('/login', { replace: true, state: { deleted: true } })
-      endSession()
+      // Navigation et fin de session dans une même transition, donc un seul rendu : sinon App voit
+      // l'utilisateur déconnecté encore sur /account et redirige lui-même vers /login, sans l'état « deleted ».
+      startTransition(() => {
+        navigate('/login', { replace: true, state: { deleted: true } })
+        endSession()
+      })
     } catch (err) {
       setDeleteState({ busy: false, error: err })
     }
@@ -90,7 +97,17 @@ export default function Account() {
 
       <div className="stack">
         <section className="card">
-          <h2 style={{ marginBottom: '0.75rem' }}>Mes informations</h2>
+          <div className="row" style={{ justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+            <h2 style={{ margin: 0 }}>Mes informations</h2>
+            {!editing && (
+              <button type="button" className="btn ghost sm" onClick={() => { setEditing(true); setSaved(false) }}>
+                <Icon name="pen" size={14} /> Modifier
+              </button>
+            )}
+          </div>
+
+          {saved && <div className="notice" style={{ marginBottom: '0.75rem' }}>Tes informations ont bien été enregistrées.</div>}
+
           <dl className="details">
             <dt>Pseudo</dt>
             <dd>{user.name}</dd>
@@ -116,6 +133,8 @@ export default function Account() {
               </>
             )}
           </dl>
+
+          {editing && <ProfileForm onDone={(changed) => { setEditing(false); setSaved(changed === true) }} />}
         </section>
 
         {!isAdmin && (

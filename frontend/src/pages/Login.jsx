@@ -104,6 +104,10 @@ export default function Login() {
             <div className="notice">Ton compte et tes données ont bien été supprimés.</div>
           )}
 
+          {location.state?.passwordReset && (
+            <div className="notice">Ton mot de passe a bien été changé : connecte-toi avec le nouveau.</div>
+          )}
+
           <div className="tabs" role="tablist">
             <button type="button" role="tab" aria-selected={!registering} className={registering ? '' : 'active'} onClick={() => switchMode('login')}>
               Connexion
@@ -175,6 +179,12 @@ export default function Login() {
           <button className="btn primary block" type="submit" disabled={busy || !ready}>
             {busy ? 'Un instant…' : registering ? 'Créer mon compte' : 'Se connecter'}
           </button>
+
+          {!registering && (
+            <Link to="/mot-de-passe-oublie" className="link" style={{ textAlign: 'center' }}>
+              Mot de passe oublié ?
+            </Link>
+          )}
 
           <Link to="/confidentialite" className="hint" style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-faint)' }}>
             Confidentialité et données personnelles

@@ -39,6 +39,26 @@ framework:
             limit: 5
             interval: '15 minutes'
 
+        # « Mot de passe oublié » : route ouverte sans jeton, qui déclenche un envoi d'e-mail.
+        # Sans limite, elle servirait à inonder la boîte de quelqu'un (par adresse IP).
+        password_reset_requests:
+            policy: sliding_window
+            limit: 5
+            interval: '1 hour'
+
+        # Confirmation du lien reçu : empêche de balayer les jetons de réinitialisation (par adresse IP).
+        password_reset_attempts:
+            policy: sliding_window
+            limit: 10
+            interval: '15 minutes'
+
+        # Modification du profil : le mot de passe actuel demandé ne doit pas se tester en boucle
+        # avec un jeton volé. Seuls les échecs comptent (par compte).
+        profile_update_failures:
+            policy: sliding_window
+            limit: 5
+            interval: '15 minutes'
+
         # Parties en direct : un code PIN n'a que 6 chiffres. Seuls les codes inconnus comptent
         # (par compte), ce qui empêche de balayer les PIN sans jamais gêner un vrai joueur.
         live_game_pin_misses:

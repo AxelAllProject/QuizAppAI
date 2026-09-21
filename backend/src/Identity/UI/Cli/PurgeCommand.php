@@ -33,7 +33,13 @@ class PurgeCommand
         }
 
         $purged = $this->purge->purge($this->clock->now());
-        $io->success(sprintf('%d jeton(s) expiré(s), %d partie(s) en direct et %d compte(s) inactif(s) supprimés.', $purged['tokens'], $purged['liveGames'], $purged['inactiveAccounts']));
+        $io->success(sprintf(
+            '%d jeton(s) expiré(s), %d lien(s) de réinitialisation, %d partie(s) en direct et %d compte(s) inactif(s) supprimés.',
+            $purged['tokens'],
+            $purged['passwordResets'],
+            $purged['liveGames'],
+            $purged['inactiveAccounts'],
+        ));
 
         return Command::SUCCESS;
     }

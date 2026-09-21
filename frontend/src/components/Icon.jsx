@@ -50,6 +50,12 @@ const ICONS = {
       <path d="m11.2 11.8 8.8-8.8M16.5 6.5l3 3M14 9l2 2" />
     </>
   ),
+  mail: (
+    <>
+      <rect x="2.5" y="5" width="19" height="14" rx="2" />
+      <path d="m3 7 9 6 9-6" />
+    </>
+  ),
   clipboard: (
     <>
       <rect x="8.5" y="3" width="7" height="4" rx="1" />

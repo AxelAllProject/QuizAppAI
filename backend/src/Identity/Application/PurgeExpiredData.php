@@ -2,7 +2,6 @@
 
 namespace App\Identity\Application;
 
-use App\Identity\Domain\Repository\ApiTokenRepository;
 use App\Identity\Domain\Repository\UserRepository;
 use App\Live\Application\LiveGamePurger;
 
@@ -13,7 +12,7 @@ class PurgeExpiredData
     public const INACTIVE_ACCOUNT_RETENTION = '-3 years';
 
     public function __construct(
-        private readonly ApiTokenRepository $tokens,
+        private readonly PurgeExpiredTokens $tokens,
         private readonly UserRepository $users,
         private readonly AccountEraser $eraser,
         private readonly LiveGamePurger $liveGames,
@@ -29,12 +28,11 @@ class PurgeExpiredData
         ];
     }
 
-    /** @return array{tokens: int, liveGames: int, inactiveAccounts: int} ce qui a été supprimé */
+    /** @return array{tokens: int, passwordResets: int, liveGames: int, inactiveAccounts: int} ce qui a été supprimé */
     public function purge(\DateTimeImmutable $now): array
     {
         $inactive = $this->users->findInactiveSince($now->modify(self::INACTIVE_ACCOUNT_RETENTION));
-        $result = [
-            'tokens' => $this->tokens->deleteExpired(),
+        $result = $this->tokens->purge() + [
             'liveGames' => $this->liveGames->purgeCreatedBefore($now->modify(self::LIVE_GAME_RETENTION)),
             'inactiveAccounts' => count($inactive),
         ];
