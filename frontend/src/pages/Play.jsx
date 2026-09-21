@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { api, assetUrl } from '../api'
+import { trackQuizStarted } from '../analytics'
 import { Tile } from '../components/live'
 import MusicToggle from '../components/MusicToggle'
 import { ErrorBox, Loader } from '../components/ui'
@@ -21,6 +22,8 @@ export default function Play() {
       .then((data) => {
         setQuiz(data)
         startedAt.current = Date.now()
+        // Comparé aux quiz terminés (mesurés côté serveur), donne le taux d'abandon.
+        trackQuizStarted(id)
       })
       .catch(setError)
   }, [id])

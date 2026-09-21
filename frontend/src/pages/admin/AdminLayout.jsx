@@ -6,6 +6,7 @@ import { Loader } from '../../components/ui'
 /** Sections du back-office affichées dans le menu. */
 const SECTIONS = [
   { to: '/admin', end: true, icon: 'dashboard', label: 'Vue d’ensemble', hint: 'Activité de la plateforme' },
+  { to: '/admin/statistiques', icon: 'chart', label: 'Statistiques', hint: 'Audience et usage' },
   { to: '/admin/comptes', icon: 'users', label: 'Comptes', hint: 'Annuaire et rôles' },
   { to: '/admin/cles', icon: 'key', label: 'Clés d’accès', hint: 'Professeur et administrateur' },
   { to: '/admin/cles-ia', icon: 'sparkles', label: 'Clés IA', hint: 'Génération de quiz' },

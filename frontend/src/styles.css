@@ -1139,3 +1139,14 @@ a.hero-stat:hover { transform: translateY(-2px); }
 .help-shots img { display: block; width: 100%; height: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow); }
 .help-shots figcaption { margin-top: 0.45rem; text-align: center; color: var(--text-faint); font-size: 0.8rem; }
 
+/* ==========================================================================
+   Statistiques : courbes d'évolution du back-office
+   ========================================================================== */
+
+.panel-body { padding: 1rem 1.1rem; }
+
+/* La courbe s'étire en largeur, mais garde une hauteur fixe : deux cadres côte à
+   côte restent comparables même quand la colonne de gauche est plus étroite. */
+.sparkline svg { display: block; width: 100%; height: 120px; overflow: visible; cursor: crosshair; }
+.sparkline-caption { margin-top: 0.6rem; color: var(--text-muted); font-size: 0.82rem; text-align: center; }
+.sparkline-caption b { color: var(--text); font-family: var(--font-display); font-size: 0.95rem; }

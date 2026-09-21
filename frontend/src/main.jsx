@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import App from './App'
 import { AuthProvider, useAuth } from './auth'
+import PageTracker from './components/PageTracker'
 import Account from './pages/Account'
 import Community from './pages/Community'
 import ForgotPassword from './pages/ForgotPassword'
@@ -36,6 +37,7 @@ const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'))
 const AiKeysPage = lazy(() => import('./pages/admin/AiKeysPage'))
 const Games = lazy(() => import('./pages/admin/Games'))
 const Overview = lazy(() => import('./pages/admin/Overview'))
+const Statistics = lazy(() => import('./pages/admin/Statistics'))
 const Editor = lazy(() => import('./pages/Editor'))
 // Guides illustrés : leurs captures ne se téléchargent qu'à l'ouverture de l'aide.
 const Help = lazy(() => import('./pages/Help'))
@@ -57,6 +59,8 @@ createRoot(document.getElementById('root')).render(
   <StrictMode>
     <AuthProvider>
       <BrowserRouter>
+        {/* Au-dessus des routes : la connexion et la page Confidentialité se visitent sans compte. */}
+        <PageTracker />
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/mot-de-passe-oublie" element={<ForgotPassword />} />
@@ -99,6 +103,7 @@ createRoot(document.getElementById('root')).render(
               }
             >
               <Route index element={<Overview />} />
+              <Route path="statistiques" element={<Statistics />} />
               <Route path="comptes" element={<Accounts />} />
               <Route path="cles" element={<AccessKeysPage />} />
               <Route path="cles-ia" element={<AiKeysPage />} />

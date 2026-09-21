@@ -2,6 +2,7 @@
 
 namespace App\Identity\UI\Cli;
 
+use App\Analytics\Application\PurgeAnalytics;
 use App\Identity\Application\PurgeExpiredData;
 use Psr\Clock\ClockInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -10,11 +11,12 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
 /** À lancer chaque jour, par exemple via cron : « php bin/console app:rgpd:purge ». */
-#[AsCommand(name: 'app:rgpd:purge', description: 'Supprime les jetons expirés, les parties en direct de plus de 24 h et les comptes inactifs depuis 3 ans')]
+#[AsCommand(name: 'app:rgpd:purge', description: 'Supprime les jetons expirés, les parties en direct de plus de 24 h, les mesures de plus d’un an et les comptes inactifs depuis 3 ans')]
 class PurgeCommand
 {
     public function __construct(
         private readonly PurgeExpiredData $purge,
+        private readonly PurgeAnalytics $analytics,
         private readonly ClockInterface $clock,
     ) {
     }
@@ -32,12 +34,13 @@ class PurgeCommand
             return Command::SUCCESS;
         }
 
-        $purged = $this->purge->purge($this->clock->now());
+        $purged = $this->purge->purge($now = $this->clock->now());
         $io->success(sprintf(
-            '%d jeton(s) expiré(s), %d lien(s) de réinitialisation, %d partie(s) en direct et %d compte(s) inactif(s) supprimés.',
+            '%d jeton(s) expiré(s), %d lien(s) de réinitialisation, %d partie(s) en direct, %d mesure(s) et %d compte(s) inactif(s) supprimés.',
             $purged['tokens'],
             $purged['passwordResets'],
             $purged['liveGames'],
+            $this->analytics->purge($now),
             $purged['inactiveAccounts'],
         ));
 

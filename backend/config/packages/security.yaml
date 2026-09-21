@@ -28,6 +28,8 @@ security:
         - { path: ^/api/(login|register|logout)$, roles: PUBLIC_ACCESS }
         # « Mot de passe oublié » : ouvert par nature — qui a perdu son mot de passe n'a pas de jeton.
         - { path: ^/api/password-reset(/confirm)?$, roles: PUBLIC_ACCESS }
+        # Mesure d'audience : la page d'accueil et la connexion se visitent avant d'avoir un compte.
+        - { path: ^/api/events$, roles: PUBLIC_ACCESS }
         - { path: ^/api, roles: ROLE_USER }
 
 when@test:

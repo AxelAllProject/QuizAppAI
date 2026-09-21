@@ -28,7 +28,7 @@ export default function Privacy() {
             <Brand />
           </Link>
           <h1>Confidentialité et données personnelles</h1>
-          <p>Version du 16 septembre 2026 — ce que QuizLab collecte, pourquoi, combien de temps, et tes droits.</p>
+          <p>Version du 21 septembre 2026 — ce que QuizLab collecte, pourquoi, combien de temps, et tes droits.</p>
         </div>
       </header>
 
@@ -36,8 +36,13 @@ export default function Privacy() {
       <ul>
         <li>On ne collecte que ce qui sert à faire fonctionner les quiz : un e-mail, un pseudo, un mot de passe, tes parties.</li>
         <li>
-          Pas de publicité, pas de mesure d’audience, pas de cookie de pistage. Polices et images sont servies par
+          Pas de publicité, pas de cookie de pistage, aucun traqueur extérieur. Polices et images sont servies par
           QuizLab lui-même.
+        </li>
+        <li>
+          QuizLab compte ses propres visites — quelles pages sont consultées et combien de temps — pour savoir ce qui
+          sert vraiment. Ces mesures restent sur notre serveur, ne sont jamais revendues, et ne contiennent ni ton
+          adresse IP ni d’empreinte de ton navigateur.
         </li>
         <li>
           Un seul service extérieur : la génération de quiz par IA, réservée aux professeurs, qui ne reçoit que le
@@ -91,6 +96,17 @@ export default function Privacy() {
               <td>Intérêt légitime : sécuriser le service (art. 6-1-f et 32 RGPD)</td>
             </tr>
             <tr>
+              <td>
+                Mesure d’usage : page consultée, temps passé dessus, action effectuée (quiz lancé, partie rejointe) et
+                identifiant de ton compte — jamais d’adresse IP ni d’empreinte de navigateur
+              </td>
+              <td>
+                Savoir quels écrans et quels quiz servent réellement, et corriger ce qui ne marche pas. Mesuré et
+                conservé par QuizLab seul, sans outil extérieur
+              </td>
+              <td>Intérêt légitime : améliorer le service (art. 6-1-f RGPD)</td>
+            </tr>
+            <tr>
               <td>Dates d’inscription, de dernière connexion et d’acceptation de cette politique</td>
               <td>Appliquer les durées de conservation, prouver ton accord</td>
               <td>Obligation de rendre compte (art. 5-2 et 7-1 RGPD)</td>
@@ -119,6 +135,10 @@ export default function Privacy() {
         <li><b>Compte et historique</b> : jusqu’à ce que tu supprimes ton compte, ou après 3 ans sans connexion.</li>
         <li><b>Jeton de connexion</b> : 30 jours, ou jusqu’à la déconnexion.</li>
         <li><b>Journal de sécurité</b> : {SECURITY_LOG_RETENTION}, puis effacé.</li>
+        <li>
+          <b>Mesure d’usage</b> : 1 an, puis effacée. Si tu supprimes ton compte, le lien entre ces mesures et toi est
+          coupé immédiatement : il ne reste que des compteurs anonymes.
+        </li>
         <li><b>Parties en direct</b> : 24 heures. Ton résultat reste ensuite dans ton historique.</li>
         <li>
           <b>Quiz rédigés</b> : ils restent disponibles après la suppression du compte, mais le nom de l’auteur est
@@ -137,7 +157,11 @@ export default function Privacy() {
       <ul>
         <li><b>Accès et portabilité</b> : « Mon compte » → « Télécharger mes données » (fichier JSON).</li>
         <li><b>Effacement</b> : « Mon compte » → « Supprimer mon compte ». C’est immédiat et définitif.</li>
-        <li><b>Rectification, opposition, limitation</b> : écris à {CONTROLLER.contact}.</li>
+        <li>
+          <b>Rectification</b> : « Mon compte » → « Modifier » pour corriger toi-même ton pseudo, ton adresse e-mail
+          ou ton mot de passe.
+        </li>
+        <li><b>Opposition, limitation</b> : écris à {CONTROLLER.contact}.</li>
         <li>
           Si tu estimes que tes droits ne sont pas respectés, tu peux adresser une réclamation à la CNIL (cnil.fr).
         </li>

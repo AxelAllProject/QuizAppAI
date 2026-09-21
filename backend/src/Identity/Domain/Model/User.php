@@ -23,7 +23,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public const ROLES = [self::ROLE_PLAYER, self::ROLE_TEACHER, self::ROLE_ADMIN];
 
     /** Version de la politique de confidentialité acceptée à l'inscription. */
-    public const PRIVACY_POLICY_VERSION = '2026-09-16';
+    public const PRIVACY_POLICY_VERSION = '2026-09-21';
 
     #[ORM\Id]
     #[ORM\GeneratedValue]

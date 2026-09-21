@@ -36,10 +36,13 @@ nouveaux défis, auteurs). Thème clair façon cahier, polices **Fredoka** /
   - [Quiz par IA (chatbot)](#créer-un-quiz-par-ia-chatbot)
   - [Quiz personnalisés et images](#quiz-personnalisés-et-images)
   - [Partie en direct](#partie-en-direct-façon-kahoot)
+  - [Aide en ligne](#aide-en-ligne)
+  - [Mesure d'usage](#mesure-dusage)
 - [Données personnelles (RGPD)](#données-personnelles-rgpd)
 - [API](#api)
 - [Structure du dépôt](#structure-du-dépôt)
 - [Tests](#tests)
+- [Intégration continue](#intégration-continue)
 - [Versions](#versions)
 - [À suivre](#à-suivre)
 
@@ -55,6 +58,8 @@ nouveaux défis, auteurs). Thème clair façon cahier, polices **Fredoka** /
 | **Lint** | oxlint | frontend |
 | **Tests** | PHPUnit 13 + Vitest 5 | backend : `WebTestCase` (fonctionnel HTTP) / `TestCase` (service) ; frontend : fonctions pures |
 | **Journaux** | Monolog (`symfony/monolog-bundle`) | canaux `audit` (actions sensibles de l'API) et `ai` (erreurs Groq) |
+| **E-mails** | `symfony/mailer` | réinitialisation du mot de passe ; Mailpit en développement |
+| **Mesure d'usage** | contexte `Analytics` maison | événements en base, tableau de bord admin, aucun service tiers |
 | **CORS** | `nelmio/cors-bundle` | origines `localhost` / `127.0.0.1` en dev |
 | **Conteneurs** | Docker Compose | une image backend (PHP 8.4), une image frontend (Node 24), lancées ensemble |
 
@@ -98,6 +103,7 @@ contexts**, chacun organisé en quatre couches.
 | `Live` | parties en direct : PIN, déroulé, points, podium |
 | `Access` | clés d'accès professeur / administrateur |
 | `Ai` | clés IA et génération de quiz (port `AiQuizGenerator`, adaptateur Groq) |
+| `Analytics` | mesure d'usage : pages vues, actions clés, tableau de bord (port `QuizCatalog`) |
 | `Shared` | `UnitOfWork`, générateur de clés, gestion des erreurs JSON |
 
 | Couche | Contenu | Règle |
@@ -135,10 +141,10 @@ L'URL de l'API côté front se règle avec `VITE_API_URL` (défaut `http://local
 
 Sans PHP ni Node installés en local : chaque partie a sa **propre image**
 (`backend/Dockerfile`, `frontend/Dockerfile`) et `compose.yaml`, à la racine, les
-lance **ensemble** :
+lance **ensemble**, avec **Mailpit** pour voir les e-mails partir :
 
 ```bash
-docker compose up --build        # frontend :5173, backend :8000
+docker compose up --build        # frontend :5173, backend :8000, Mailpit :8025
 docker compose exec backend php bin/console doctrine:fixtures:load   # jeu de démo (VIDE la base)
 docker compose down
 ```
@@ -151,7 +157,17 @@ la base SQLite reste dans `backend/var/`. `GROQ_API_KEY` se lit toujours dans
 ## Rôles et connexion
 
 De vrais comptes : **e-mail + mot de passe** (haché par le composant Security de
-Symfony). À la connexion, le serveur remet un **jeton** que le navigateur
+Symfony). Chacun modifie son **pseudo**, son **adresse e-mail** et son **mot de
+passe** depuis « Mon compte » — le mot de passe actuel est demandé à chaque fois,
+pour qu'un jeton volé ne suffise pas à détourner l'adresse de connexion. En cas
+d'oubli, **« Mot de passe oublié »** envoie un lien valable **1 heure** et à
+**usage unique**, qui ferme au passage toutes les sessions ouvertes.
+
+> ⚠️ `MAILER_DSN` vaut `null://null` par défaut : **aucun e-mail ne part** tant
+> qu'un SMTP n'est pas configuré dans `backend/.env.local`. Avec
+> `docker compose up`, Mailpit prend le relais et affiche les messages sur
+> http://localhost:8025. `APP_FRONTEND_URL` doit pointer vers l'adresse publique
+> du frontend, c'est elle qui construit le lien reçu par e-mail. À la connexion, le serveur remet un **jeton** que le navigateur
 renvoie à chaque requête (`Authorization: Bearer …`). Le rôle est relu **en
 base** à chaque requête : il ne peut plus être forgé côté client, et un
 changement de rôle s'applique immédiatement.
@@ -241,6 +257,43 @@ aucune fuite de l'adresse IP des joueurs.
 
 **Points** : une bonne réponse rapporte de 1 000 (instantanée) à 500 (au dernier moment), une mauvaise 0.
 
+### Aide en ligne
+
+Une page **Aide** (`/aide`, lien en pied de page) réunit des guides illustrés par
+public — **élève**, **professeur**, **administrateur** — avec les captures de
+chaque écran concerné. Les images ne se téléchargent qu'à l'ouverture de la page :
+la première visite d'un élève n'en paie pas le poids.
+
+### Mesure d'usage
+
+Pour savoir ce qui sert vraiment, QuizLab **se mesure lui-même** : un bounded
+context `Analytics`, une table d'événements, et un tableau de bord dans
+**Administration → Statistiques**. Aucun service tiers, aucun cookie, aucun
+bandeau de consentement à ajouter — rien ne sort du serveur.
+
+Deux sources, volontairement :
+
+- **Le navigateur** ne déclare que ce qu'il est seul à savoir : la **page
+  consultée** et le **temps passé dessus**, plus l'**ouverture d'un quiz**. La
+  liste des noms acceptés est fermée côté serveur — la console ne sert à rien.
+- **Le serveur** mesure les **actions clés** au passage des réponses de l'API
+  (`ApiActivityListener`, sur le modèle du journal d'audit) : inscription,
+  connexion, quiz créé, quiz terminé, partie en direct animée ou rejointe,
+  génération IA, export RGPD. Ces chiffres-là ne peuvent pas être falsifiés, et
+  un bloqueur de scripts ne les fait pas disparaître.
+
+Le tableau de bord donne, sur 7 jours à 1 an : comptes **actifs** (jour / 7 j /
+30 j) et courbe quotidienne, **nouveaux comptes**, **écrans les plus consultés**
+avec leur durée moyenne, **actions clés**, **taux de réussite des générations
+IA**, **quiz et matières les plus joués**, **taux d'abandon** et quiz **jamais
+joués**.
+
+> Ce que la table ne contient **pas** : adresse IP, user-agent, empreinte de
+> navigateur, identifiant de suivi. Les chemins sont **normalisés** (`/quiz/42`
+> → `/quiz/:id`) : on mesure des écrans, pas qui a lu quoi. Conservation **1 an**
+> (`app:rgpd:purge`), et la suppression d'un compte **coupe le lien** vers ses
+> mesures, qui ne restent que comme compteurs anonymes.
+
 ## Données personnelles (RGPD)
 
 | Principe | Mise en œuvre |
@@ -249,7 +302,8 @@ aucune fuite de l'adresse IP des joueurs.
 | **Minimisation** | e-mail, pseudo, mot de passe haché, parties — pas de nom, pas de date de naissance ; polices servies localement ; seul le sujet d'une génération IA part chez Groq |
 | **Accès et portabilité** | **Mon compte → Télécharger mes données** (JSON complet) |
 | **Effacement** | **Mon compte → Supprimer mon compte** : compte, jetons, historique effacés ; quiz anonymisés |
-| **Conservation** | jetons 30 j ; parties en direct 24 h ; comptes inactifs 3 ans — via `app:rgpd:purge` ; journal de sécurité 6 mois (à régler chez l'hébergeur) |
+| **Rectification** | **Mon compte → Modifier** : pseudo, e-mail et mot de passe changés par la personne elle-même |
+| **Conservation** | jetons 30 j ; liens de réinitialisation 1 h ; parties en direct 24 h ; mesures d'usage 1 an ; comptes inactifs 3 ans — via `app:rgpd:purge` ; journal de sécurité 6 mois (à régler chez l'hébergeur) |
 | **Sécurité** | mots de passe hachés, jetons en empreinte SHA-256, rôles vérifiés côté serveur, limites de débit, en-têtes HTTP de sécurité, journal d'audit sans mot de passe ni e-mail |
 
 ```bash
@@ -261,8 +315,8 @@ php bin/console app:rgpd:purge            # --dry-run pour voir ce qui serait su
 
 ## API
 
-Toutes les routes sauf `register`, `login` et `logout` demandent
-`Authorization: Bearer <jeton>`.
+Toutes les routes sauf `register`, `login`, `logout`, `password-reset` et
+`events` demandent `Authorization: Bearer <jeton>`.
 
 <details>
 <summary><strong>Voir la liste complète des routes</strong></summary>
@@ -272,7 +326,9 @@ Toutes les routes sauf `register`, `login` et `logout` demandent
 | POST | `/api/register` | e-mail, pseudo, mot de passe, consentement (+ clé d'accès) → jeton |
 | POST | `/api/login` | e-mail + mot de passe → jeton |
 | POST | `/api/logout` | révoque le jeton |
-| GET / DELETE | `/api/me` | mon compte / suppression (mot de passe requis, 5 échecs / 15 min) |
+| POST | `/api/password-reset` | demande un lien de réinitialisation (5/h par IP, réponse identique si l'adresse est inconnue) |
+| POST | `/api/password-reset/confirm` | applique le nouveau mot de passe (10 essais / 15 min par IP) |
+| GET / PUT / DELETE | `/api/me` | mon compte / modification (e-mail, pseudo, mot de passe) / suppression — mot de passe requis, 5 échecs / 15 min |
 | POST | `/api/me/access-key` | saisir une clé d'accès |
 | GET | `/api/me/export` | export de mes données (JSON) |
 | GET | `/api/quizzes` | liste, filtres `search`, `category`, `mine` |
@@ -300,6 +356,8 @@ Toutes les routes sauf `register`, `login` et `logout` demandent
 | GET | `/api/sessions/summary` | nombre de parties et réussite moyenne du compte, sur tout l'historique |
 | GET | `/api/sessions/{id}` | détail d'une session |
 | GET | `/api/stats` | compteurs + classement |
+| POST | `/api/events` | déclare une page vue ou un quiz ouvert (ouvert sans jeton, 300 / 10 min par IP) |
+| GET | `/api/analytics` | tableau de bord de la mesure d'usage, `days` = 7, 30, 90 ou 365 (**admin**) |
 
 </details>
 
@@ -317,6 +375,7 @@ projet/
 │   │   ├── Live/            parties en direct
 │   │   ├── Access/          clés d'accès prof / admin
 │   │   ├── Ai/              clés IA, génération Groq
+│   │   ├── Analytics/       mesure d'usage, tableau de bord des statistiques
 │   │   └── Shared/          UnitOfWork, erreurs JSON, en-têtes de sécurité, journal d'audit, générateur de clés
 │   │       (dans chaque contexte : Domain/ · Application/ · Infrastructure/ · UI/)
 │   ├── migrations/          schéma versionné (Doctrine Migrations)
@@ -325,9 +384,10 @@ projet/
 │   ├── Dockerfile            image de dev Node 24
 │   ├── public/               favicon.svg, banner.svg (bannière du README)
 │   └── src/
-│       ├── pages/            routes de l'app (Library, Editor, LiveHost…)
-│       │   └── admin/         back-office (vue d'ensemble, comptes, clés, parties)
-│       └── components/       widgets partagés (tableaux filtrables, chat IA, tuiles de jeu…)
+│       ├── analytics.js      déclare les pages vues à l'API (aucun service tiers)
+│       ├── pages/            routes de l'app (Library, Editor, LiveHost, Help…)
+│       │   └── admin/         back-office (vue d'ensemble, statistiques, comptes, clés, parties)
+│       └── components/       widgets partagés (tableaux filtrables, chat IA, tuiles de jeu, courbes…)
 ```
 
 ## Tests
@@ -339,6 +399,25 @@ cd frontend && npm test && npm run lint && npm run build   # Vitest : fonctions 
 
 Journaux en développement : `backend/var/log/dev.log` (tout) et `backend/var/log/audit_dev.log`
 (actions sensibles de l'API et erreurs de l'IA).
+
+## Intégration continue
+
+`.github/workflows/ci.yml` tourne à chaque **push sur `main`** et sur chaque
+**pull request**, en trois travaux parallèles :
+
+| Travail | Ce qu'il vérifie |
+|---|---|
+| **Backend** | `composer validate`, style `php-cs-fixer check`, `php bin/phpunit`, `composer audit` |
+| **Frontend** | `npm run lint`, `npm test`, `npm run build` (artefact conservé 7 j), `npm audit` |
+| **Images Docker** | `docker compose build` : les deux images se construisent encore |
+
+Un nouveau push annule le run précédent sur la même branche. Le workflow
+**Release** appelle cette même CI (`workflow_call`) avant de publier : impossible
+de taguer une version dont les tests ne passent pas.
+
+`.github/dependabot.yml` propose les mises à jour en pull requests : Composer et
+npm chaque semaine (dépendances Symfony groupées, dépendances de développement
+groupées), actions GitHub et images Docker chaque mois.
 
 ## Versions
 
@@ -355,7 +434,7 @@ Chaque version est un tag `vX.Y.Z` sur `main`, publié dans les
 
 ```bash
 # 1. mettre à jour "version" dans frontend/package.json, commit sur main
-# 2. taguer et pousser : le workflow Release lance les tests puis publie la version
+# 2. taguer et pousser : le workflow Release lance toute la CI puis publie la version
 git tag -a v1.0.0 -m "QuizLab 1.0.0"
 git push origin v1.0.0
 ```
@@ -367,6 +446,7 @@ Un tag avec suffixe (`v1.1.0-beta.1`) est publié comme pré-version.
 - **Lecture vocale des quiz** : prévue, non implémentée. Le plus simple sera
   `speechSynthesis` (Web Speech API, native, sans coût) branché sur `Play.jsx`
   et `LiveHost.jsx`.
-- **Modifier son e-mail ou son pseudo** depuis « Mon compte » (aujourd'hui :
-  sur demande au contact indiqué dans la politique de confidentialité).
-- **Mot de passe oublié** : demande un envoi d'e-mail (`symfony/mailer`).
+- **Vérifier la nouvelle adresse e-mail** par un lien de confirmation avant de
+  l'appliquer : aujourd'hui le changement est immédiat, protégé par le mot de
+  passe actuel.
+- **Export des statistiques** en CSV depuis le tableau de bord.

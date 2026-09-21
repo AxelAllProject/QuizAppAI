@@ -49,6 +49,12 @@ doctrine:
                 dir: '%kernel.project_dir%/src/Ai/Domain/Model'
                 prefix: 'App\Ai\Domain\Model'
                 alias: Ai
+            Analytics:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Analytics/Domain/Model'
+                prefix: 'App\Analytics\Domain\Model'
+                alias: Analytics
 
 when@test:
     doctrine:

@@ -45,8 +45,12 @@ export class ApiError extends Error {
   }
 }
 
-/** Appelle l'API avec le jeton de connexion, et renvoie la réponse JSON ou lève une erreur lisible. */
-export async function api(path, { method = 'GET', body, form } = {}) {
+/**
+ * Appelle l'API avec le jeton de connexion, et renvoie la réponse JSON ou lève une erreur lisible.
+ * `keepalive` laisse la requête se terminer même si la page se ferme dans la foulée
+ * (utilisé par la mesure d'audience, qui envoie la durée du dernier écran au départ).
+ */
+export async function api(path, { method = 'GET', body, form, keepalive = false } = {}) {
   const session = readSession()
   const headers = form ? {} : { 'Content-Type': 'application/json' }
 
@@ -59,6 +63,7 @@ export async function api(path, { method = 'GET', body, form } = {}) {
     response = await fetch(`${BASE}${path}`, {
       method,
       headers,
+      keepalive,
       body: form ?? (body === undefined ? undefined : JSON.stringify(body)),
     })
   } catch {
